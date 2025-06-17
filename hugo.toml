@@ -1,0 +1,19 @@
+baseURL = 'https://energy.yourdomain.com'
+languageCode = 'en-us'
+title = 'Energy Price Dashboard'
+theme = ''
+
+[params]
+  description = "Real-time energy price forecasts"
+  author = "Jeroen Veen"
+  
+[markup]
+  [markup.goldmark]
+    [markup.goldmark.renderer]
+      unsafe = true
+
+[server]
+  [[server.headers]]
+    for = "/data/**"
+    [server.headers.values]
+      Access-Control-Allow-Origin = "*"

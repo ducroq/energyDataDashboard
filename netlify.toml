@@ -1,0 +1,29 @@
+[build]
+  command = """
+    echo "Installing Python dependencies..." &&
+    pip install cryptography &&
+    echo "Fetching and decrypting energy data..." &&
+    mkdir -p data &&
+    python decrypt_data.py &&
+    echo "Energy data decrypted successfully" &&
+    hugo --minify
+  """
+  publish = "public"
+
+[build.environment]
+  HUGO_VERSION = "0.124.0"
+  PYTHON_VERSION = "3.11"
+
+[[headers]]
+  for = "/data/*"
+  [headers.values]
+    Cache-Control = "public, max-age=300"  # 5 minutes cache
+
+[context.production]
+  command = """
+    echo "Production build - decrypting energy data..." &&
+    pip install cryptography &&
+    mkdir -p data &&
+    python decrypt_data.py &&
+    hugo --minify --baseURL $DEPLOY_PRIME_URL
+  """
