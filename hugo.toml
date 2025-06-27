@@ -1,7 +1,6 @@
 baseURL = 'https://energy.yourdomain.com'
 languageCode = 'en-us'
 title = 'Energy Price Dashboard'
-theme = ''
 
 [params]
   description = "Real-time energy price forecasts"
