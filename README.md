@@ -8,7 +8,7 @@ An interactive web dashboard for visualizing real-time energy price forecasts in
 - **Price Threshold Highlighting**: Color-coded visualization to identify cheap (green), medium (yellow), and expensive (red) energy periods
 - **Time Range Controls**: View data for different periods (24h, 48h, 7d, or all forecast data)
 - **Price Statistics**: Real-time calculation of minimum, maximum, and average prices
-- **Cheap Hours Counter**: Automatically identifies and counts hours below your price threshold
+<!-- - **Cheap Hours Counter**: Automatically identifies and counts hours below your price threshold -->
 - **Mobile Responsive Design**: Optimized for both desktop and mobile viewing
 - **Automatic Data Updates**: Dashboard rebuilds automatically when new energy data is published
 - **Secure Data Handling**: Fetches and decrypts encrypted data from the Energy Data Hub
@@ -83,6 +83,12 @@ This project consists of two main components:
    ```bash
    export ENCRYPTION_KEY_B64="your_base64_encryption_key"
    export HMAC_KEY_B64="your_base64_hmac_key"
+   ```
+
+   or on Windows Power Shell
+   ```bash
+   $env:ENCRYPTION_KEY_B64 = "your_base64_encryption_key"
+   $env:HMAC_KEY_B64 = "your_base64_hmac_key"
    ```
 
 4. **Fetch and Decrypt Data**
