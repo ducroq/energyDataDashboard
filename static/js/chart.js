@@ -46,7 +46,7 @@ class EnergyDashboard {
         const now = new Date();
         const cutoffTime = this.getTimeRangeCutoff(timeRange, now);
 
-        // Process each data source
+        // Process each data source with automatic unit detection
         const dataSources = [
             { key: 'entsoe', name: 'ENTSO-E', color: '#60a5fa' },
             { key: 'energy_zero', name: 'EnergyZero', color: '#34d399' },
@@ -57,10 +57,35 @@ class EnergyDashboard {
         dataSources.forEach(source => {
             if (this.energyData[source.key] && this.energyData[source.key].data) {
                 const sourceData = this.energyData[source.key].data;
-                const dataPoints = Object.entries(sourceData).map(([datetime, price]) => ({
-                    datetime: datetime,
-                    price: price
-                }));
+                const metadata = this.energyData[source.key].metadata;
+                
+                // Get unit conversion multiplier from metadata
+                let multiplier = 1;
+                if (metadata && metadata.units) {
+                    const units = metadata.units.toLowerCase();
+                    if (units.includes('kwh') || units.includes('eur/kwh')) {
+                        multiplier = 1000; // Convert kWh to MWh
+                        console.log(`${source.name}: Converting from ${metadata.units} to EUR/MWh (x1000)`);
+                    } else if (units.includes('mwh') || units.includes('eur/mwh')) {
+                        multiplier = 1; // Already in MWh
+                        console.log(`${source.name}: Already in ${metadata.units}`);
+                    } else {
+                        console.warn(`${source.name}: Unknown unit ${metadata.units}, assuming EUR/MWh`);
+                    }
+                }
+                
+                const dataPoints = Object.entries(sourceData).map(([datetime, price]) => {
+                    // Fix timezone issues
+                    let normalizedDatetime = datetime;
+                    if (datetime.includes('+00:18')) {
+                        normalizedDatetime = datetime.replace('+00:18', '+02:00');
+                    }
+                    
+                    return {
+                        datetime: normalizedDatetime,
+                        price: price * multiplier // Apply unit conversion
+                    };
+                });
 
                 // Filter by time range
                 const filteredData = dataPoints.filter(item => {
@@ -69,6 +94,9 @@ class EnergyDashboard {
                 });
 
                 if (filteredData.length > 0) {
+                    // Sort by time to ensure proper line drawing
+                    filteredData.sort((a, b) => new Date(a.datetime) - new Date(b.datetime));
+                    
                     const xValues = filteredData.map(item => item.datetime);
                     const yValues = filteredData.map(item => item.price);
 
@@ -77,7 +105,7 @@ class EnergyDashboard {
                         y: yValues,
                         type: 'scatter',
                         mode: 'lines+markers',
-                        name: source.name,
+                        name: `${source.name} (${metadata?.units || 'EUR/MWh'})`,
                         line: { 
                             width: 3,
                             color: source.color
@@ -93,7 +121,8 @@ class EnergyDashboard {
         });
 
         return traces;
-    }    
+    }
+
     getTimeRangeCutoff(timeRange, now) {
         const cutoffs = {
             '24h': new Date(now.getTime() + 24 * 60 * 60 * 1000),
@@ -102,7 +131,7 @@ class EnergyDashboard {
             'all': new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000)
         };
         return now; // Start from now, show future data
-    }
+    }    
 
     updateChart() {
         const traces = this.processEnergyDataForChart(this.currentTimeRange);
@@ -167,19 +196,40 @@ class EnergyDashboard {
     updateInfo() {
         if (!this.energyData) return;
 
-        // Collect all data points from all sources
+        // Collect all data points from all sources with unit conversion
         let allDataPoints = [];
         const dataSources = ['entsoe', 'energy_zero', 'epex', 'elspot'];
         
         dataSources.forEach(sourceKey => {
             if (this.energyData[sourceKey] && this.energyData[sourceKey].data) {
                 const sourceData = this.energyData[sourceKey].data;
+                const metadata = this.energyData[sourceKey].metadata;
+                
+                // Get unit conversion multiplier
+                let multiplier = 1;
+                if (metadata && metadata.units) {
+                    const units = metadata.units.toLowerCase();
+                    if (units.includes('kwh') || units.includes('eur/kwh')) {
+                        multiplier = 1000;
+                    }
+                }
+                
                 Object.entries(sourceData).forEach(([datetime, price]) => {
-                    allDataPoints.push({ datetime, price, source: sourceKey });
+                    let normalizedDatetime = datetime;
+                    if (datetime.includes('+00:18')) {
+                        normalizedDatetime = datetime.replace('+00:18', '+02:00');
+                    }
+                    
+                    allDataPoints.push({ 
+                        datetime: normalizedDatetime, 
+                        price: price * multiplier, 
+                        source: sourceKey 
+                    });
                 });
             }
         });
 
+        // Rest of the function remains the same...
         if (allDataPoints.length === 0) return;
 
         // Sort by datetime to get current price
@@ -214,6 +264,7 @@ class EnergyDashboard {
             `${cheapHours.length} data points below €${this.priceThreshold}<br>` +
             `(${((cheapHours.length / allDataPoints.length) * 100).toFixed(1)}% of all data)`;
     }
+
 }
 
 // Initialize dashboard when page loads
