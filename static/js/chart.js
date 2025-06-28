@@ -38,25 +38,39 @@ class EnergyDashboard {
     }
 
     processEnergyDataForChart(timeRange) {
-        if (!this.energyData || !Array.isArray(this.energyData)) {
+        if (!this.energyData) {
             return { x: [], y: [], colors: [] };
         }
 
+        // Handle your nested data structure
+        let dataPoints = [];
+        
+        if (this.energyData.entsoe && this.energyData.entsoe.data) {
+            // Convert your object format to array format
+            const entsoeData = this.energyData.entsoe.data;
+            dataPoints = Object.entries(entsoeData).map(([datetime, price]) => ({
+                datetime: datetime,
+                price: price
+            }));
+        } else if (Array.isArray(this.energyData)) {
+            // Fallback for array format
+            dataPoints = this.energyData;
+        } else {
+            console.error('Unexpected data format:', this.energyData);
+            return { x: [], y: [], colors: [] };
+        }
+
+        // Filter by time range
         const now = new Date();
         const cutoffTime = this.getTimeRangeCutoff(timeRange, now);
         
-        const filteredData = this.energyData.filter(item => {
-            const itemDate = new Date(item.datetime || item.timestamp || item.time);
+        const filteredData = dataPoints.filter(item => {
+            const itemDate = new Date(item.datetime);
             return itemDate >= cutoffTime;
         });
 
-        const xValues = filteredData.map(item => 
-            item.datetime || item.timestamp || item.time
-        );
-        
-        const yValues = filteredData.map(item => 
-            item.price || item.value || item.energy_price || 0
-        );
+        const xValues = filteredData.map(item => item.datetime);
+        const yValues = filteredData.map(item => item.price);
 
         // Color points based on price threshold
         const colors = yValues.map(price => 
@@ -66,7 +80,7 @@ class EnergyDashboard {
 
         return { x: xValues, y: yValues, colors: colors };
     }
-
+    
     getTimeRangeCutoff(timeRange, now) {
         const cutoffs = {
             '24h': new Date(now.getTime() + 24 * 60 * 60 * 1000),
@@ -150,24 +164,35 @@ class EnergyDashboard {
     }
 
     updateInfo() {
-        if (!this.energyData || !Array.isArray(this.energyData)) return;
+        if (!this.energyData) return;
+
+        // Handle your nested data structure
+        let dataPoints = [];
+        if (this.energyData.entsoe && this.energyData.entsoe.data) {
+            const entsoeData = this.energyData.entsoe.data;
+            dataPoints = Object.entries(entsoeData).map(([datetime, price]) => ({
+                datetime: datetime,
+                price: price
+            }));
+        }
+
+        if (dataPoints.length === 0) return;
 
         // Update last update time
+        const lastUpdate = this.energyData.entsoe?.metadata?.start_time || new Date().toISOString();
         document.getElementById('lastUpdate').textContent = 
-            `Last updated: ${new Date().toLocaleString()}`;
+            `Last updated: ${new Date(lastUpdate).toLocaleString()}`;
         
         // Current price (first data point)
-        if (this.energyData.length > 0) {
-            const currentPrice = this.energyData[0].price || this.energyData[0].value || 0;
-            const priceClass = currentPrice < this.priceThreshold ? 'price-low' : 
-                              currentPrice < this.priceThreshold * 1.5 ? 'price-medium' : 'price-high';
-            
-            document.getElementById('currentPrice').innerHTML = 
-                `<span class="price-current ${priceClass}">€${currentPrice.toFixed(2)}</span><br>per MWh`;
-        }
+        const currentPrice = dataPoints[0].price;
+        const priceClass = currentPrice < this.priceThreshold ? 'price-low' : 
+                        currentPrice < this.priceThreshold * 1.5 ? 'price-medium' : 'price-high';
+        
+        document.getElementById('currentPrice').innerHTML = 
+            `<span class="price-current ${priceClass}">€${currentPrice.toFixed(2)}</span><br>per MWh`;
         
         // Price statistics
-        const prices = this.energyData.map(item => item.price || item.value || 0);
+        const prices = dataPoints.map(item => item.price);
         const min = Math.min(...prices);
         const max = Math.max(...prices);
         const avg = prices.reduce((a, b) => a + b, 0) / prices.length;
@@ -176,13 +201,11 @@ class EnergyDashboard {
             `Min: €${min.toFixed(2)}<br>Max: €${max.toFixed(2)}<br>Average: €${avg.toFixed(2)}`;
         
         // Cheap hours (below threshold)
-        const cheapHours = this.energyData.filter(item => 
-            (item.price || item.value || 0) < this.priceThreshold
-        );
+        const cheapHours = dataPoints.filter(item => item.price < this.priceThreshold);
         
         document.getElementById('cheapHours').innerHTML = 
             `${cheapHours.length} hours below €${this.priceThreshold}<br>` +
-            `(${((cheapHours.length / this.energyData.length) * 100).toFixed(1)}% of forecast)`;
+            `(${((cheapHours.length / dataPoints.length) * 100).toFixed(1)}% of forecast)`;
     }
 }
 

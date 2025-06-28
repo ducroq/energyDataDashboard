@@ -52,8 +52,8 @@ def fetch_and_decrypt_energy_data():
         decrypted = handler.decrypt_and_verify(encrypted_data)
         
         # Ensure data directory exists
-        os.makedirs('data', exist_ok=True)
-        output_path = 'data/energy_price_forecast.json'
+        os.makedirs('static/data', exist_ok=True)
+        output_path = 'static/data/energy_price_forecast.json'
         
         # Save decrypted data with datetime serialization
         with open(output_path, 'w') as f:
