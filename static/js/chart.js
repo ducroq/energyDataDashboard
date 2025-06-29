@@ -85,10 +85,17 @@ class EnergyDashboard {
                         normalizedDatetime = cestDate.toISOString().replace('Z', '+02:00');
                     }
                     // For other sources, keep their timezone as-is (they should already be in +02:00)
+
+                    // Add controlled noise for data protection
+                    let noisyPrice = price * multiplier;
+                    if (noisyPrice !== 0) { // Don't add noise to zero values
+                        const noisePercent = (Math.random() - 0.5) * 0.1; // ±5% random noise
+                        noisyPrice = noisyPrice * (1 + noisePercent);
+                    }                    
                     
                     return {
                         datetime: normalizedDatetime,
-                        price: price * multiplier
+                        price: noisyPrice
                     };
                 });
                 // Filter by time range
@@ -165,7 +172,7 @@ class EnergyDashboard {
         
         const layout = {
             title: {
-                text: 'Energy Price Forecasts for the Netherlands',
+                // text: 'Energy Price Forecasts for the Netherlands',
                 font: { color: 'white', size: 18 }
             },
             paper_bgcolor: 'rgba(0,0,0,0)',
