@@ -54,6 +54,9 @@ class EnergyDashboard {
             { key: 'elspot', name: 'Nord Pool', color: '#ef4444' }
         ];
 
+        // Collect all timestamps to determine full time range for threshold line
+        let allTimestamps = [];
+
         dataSources.forEach(source => {
             if (this.energyData[source.key] && this.energyData[source.key].data) {
                 const sourceData = this.energyData[source.key].data;
@@ -65,20 +68,23 @@ class EnergyDashboard {
                     const units = metadata.units.toLowerCase();
                     if (units.includes('kwh') || units.includes('eur/kwh')) {
                         multiplier = 1000; // Convert kWh to MWh
-                        console.log(`${source.name}: Converting from ${metadata.units} to EUR/MWh (x1000)`);
-                    } else if (units.includes('mwh') || units.includes('eur/mwh')) {
-                        multiplier = 1; // Already in MWh
-                        console.log(`${source.name}: Already in ${metadata.units}`);
-                    } else {
-                        console.warn(`${source.name}: Unknown unit ${metadata.units}, assuming EUR/MWh`);
                     }
                 }
                 
                 const dataPoints = Object.entries(sourceData).map(([datetime, price]) => {
-                    // Fix timezone issues
+                    // Normalize all timestamps to Europe/Amsterdam timezone (+02:00 CEST)
                     let normalizedDatetime = datetime;
+                    
+                    // Fix Nord Pool's weird +00:18 offset
                     if (datetime.includes('+00:18')) {
                         normalizedDatetime = datetime.replace('+00:18', '+02:00');
+                    }
+                    
+                    // Convert any UTC (+00:00) timestamps to CEST (+02:00)
+                    if (datetime.includes('+00:00')) {
+                        const utcDate = new Date(datetime);
+                        const cestDate = new Date(utcDate.getTime() + (2 * 60 * 60 * 1000)); // Add 2 hours
+                        normalizedDatetime = cestDate.toISOString().replace('Z', '+02:00');
                     }
                     
                     return {
@@ -100,12 +106,15 @@ class EnergyDashboard {
                     const xValues = filteredData.map(item => item.datetime);
                     const yValues = filteredData.map(item => item.price);
 
+                    // Collect timestamps for threshold line
+                    allTimestamps.push(...xValues);
+
                     traces.push({
                         x: xValues,
                         y: yValues,
                         type: 'scatter',
                         mode: 'lines+markers',
-                        name: `${source.name} (${metadata?.units || 'EUR/MWh'})`,
+                        name: source.name, // Remove units from legend
                         line: { 
                             width: 3,
                             color: source.color
@@ -119,6 +128,9 @@ class EnergyDashboard {
                 }
             }
         });
+
+        // Store all timestamps for threshold line
+        this.allTimestamps = [...new Set(allTimestamps)].sort();
 
         return traces;
     }
@@ -136,11 +148,11 @@ class EnergyDashboard {
     updateChart() {
         const traces = this.processEnergyDataForChart(this.currentTimeRange);
         
-        // Add threshold line if we have data
-        if (traces.length > 0 && traces[0].x.length > 0) {
+        // Add threshold line across the entire time range
+        if (traces.length > 0 && this.allTimestamps && this.allTimestamps.length > 0) {
             traces.push({
-                x: traces[0].x,
-                y: new Array(traces[0].x.length).fill(this.priceThreshold),
+                x: this.allTimestamps,
+                y: new Array(this.allTimestamps.length).fill(this.priceThreshold),
                 type: 'scatter',
                 mode: 'lines',
                 name: 'Threshold',
