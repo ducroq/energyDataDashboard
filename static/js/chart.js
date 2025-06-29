@@ -15,9 +15,11 @@ class EnergyDashboard {
 
     async loadEnergyData() {
         try {
-            const response = await fetch('/data/energy_price_forecast.json');
+            // Add timestamp to bypass cache
+            const timestamp = new Date().getTime();
+            const response = await fetch(`/data/energy_price_forecast.json?t=${timestamp}`);
             this.energyData = await response.json();
-            console.log('Loaded energy data:', this.energyData);
+            console.log('Loaded fresh energy data:', this.energyData);
         } catch (error) {
             console.error('Error loading energy data:', error);
             this.energyData = [];
@@ -51,7 +53,7 @@ class EnergyDashboard {
             { key: 'entsoe', name: 'ENTSO-E', color: '#60a5fa' },
             { key: 'energy_zero', name: 'EnergyZero', color: '#34d399' },
             { key: 'epex', name: 'EPEX', color: '#f59e0b' },
-            { key: 'elspot', name: 'Nord Pool', color: '#ef4444' }
+            { key: 'elspot', name: 'Elspot', color: '#ef4444' }
         ];
 
         // Collect all timestamps to determine full time range for threshold line
@@ -72,27 +74,23 @@ class EnergyDashboard {
                 }
                 
                 const dataPoints = Object.entries(sourceData).map(([datetime, price]) => {
-                    // Normalize all timestamps to Europe/Amsterdam timezone (+02:00 CEST)
                     let normalizedDatetime = datetime;
                     
-                    // Fix Nord Pool's weird +00:18 offset
+                    // Handle Elspot's weird +00:18 offset - convert to proper CEST
                     if (datetime.includes('+00:18')) {
-                        normalizedDatetime = datetime.replace('+00:18', '+02:00');
-                    }
-                    
-                    // Convert any UTC (+00:00) timestamps to CEST (+02:00)
-                    if (datetime.includes('+00:00')) {
-                        const utcDate = new Date(datetime);
-                        const cestDate = new Date(utcDate.getTime() + (2 * 60 * 60 * 1000)); // Add 2 hours
+                        // Remove the weird offset and parse as if it's UTC, then convert to CEST
+                        const baseTime = datetime.replace('+00:18', 'Z');
+                        const utcDate = new Date(baseTime);
+                        const cestDate = new Date(utcDate.getTime() + (2 * 60 * 60 * 1000)); // Add 2 hours for CEST
                         normalizedDatetime = cestDate.toISOString().replace('Z', '+02:00');
                     }
+                    // For other sources, keep their timezone as-is (they should already be in +02:00)
                     
                     return {
                         datetime: normalizedDatetime,
-                        price: price * multiplier // Apply unit conversion
+                        price: price * multiplier
                     };
                 });
-
                 // Filter by time range
                 const filteredData = dataPoints.filter(item => {
                     const itemDate = new Date(item.datetime);
@@ -167,7 +165,7 @@ class EnergyDashboard {
         
         const layout = {
             title: {
-                text: 'Energy Price Forecast - All Providers',
+                text: 'Energy Price Forecasts for the Netherlands',
                 font: { color: 'white', size: 18 }
             },
             paper_bgcolor: 'rgba(0,0,0,0)',
