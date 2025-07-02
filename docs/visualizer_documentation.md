@@ -374,6 +374,3 @@ console.log('Data points per trace:', traces.map(t => t.x.length));
 - **Email Support**: Direct contact for urgent issues
 - **Documentation Updates**: Continuous improvement process
 
----
-
-*This documentation is part of the Energy Data Hub project ecosystem, providing comprehensive guidance for the visualization component of the energy data collection and analysis platform.*
