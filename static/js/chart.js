@@ -32,11 +32,11 @@ class EnergyDashboard {
         //     this.updateChart();
         // });
 
-        document.getElementById('priceThreshold').addEventListener('input', (e) => {
-            this.priceThreshold = parseFloat(e.target.value) || 50;
-            this.updateChart();
-            this.updateInfo();
-        });
+        // document.getElementById('priceThreshold').addEventListener('input', (e) => {
+        //     this.priceThreshold = parseFloat(e.target.value) || 50;
+        //     this.updateChart();
+        //     this.updateInfo();
+        // });
     }
 
     processEnergyDataForChart(timeRange) {
