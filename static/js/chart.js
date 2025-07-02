@@ -1,8 +1,8 @@
 class EnergyDashboard {
     constructor() {
         this.energyData = null;
-        this.currentTimeRange = '24h';
-        this.priceThreshold = 50;
+        this.currentTimeRange = 'all';
+        this.priceThreshold = 100;
         this.init();
     }
 
@@ -27,10 +27,10 @@ class EnergyDashboard {
     }
 
     setupEventListeners() {
-        document.getElementById('timeRange').addEventListener('change', (e) => {
-            this.currentTimeRange = e.target.value;
-            this.updateChart();
-        });
+        // document.getElementById('timeRange').addEventListener('change', (e) => {
+        //     this.currentTimeRange = e.target.value;
+        //     this.updateChart();
+        // });
 
         document.getElementById('priceThreshold').addEventListener('input', (e) => {
             this.priceThreshold = parseFloat(e.target.value) || 50;
