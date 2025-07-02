@@ -257,13 +257,13 @@ class EnergyDashboard {
         document.getElementById('lastUpdate').textContent = 
             `Last updated: ${new Date(lastUpdate).toLocaleString()}`;
         
-        // Current price (first data point)
-        const currentPrice = allDataPoints[0].price;
-        const priceClass = currentPrice < this.priceThreshold ? 'price-low' : 
-                        currentPrice < this.priceThreshold * 1.5 ? 'price-medium' : 'price-high';
+        // // Current price (first data point)
+        // const currentPrice = allDataPoints[0].price;
+        // const priceClass = currentPrice < this.priceThreshold ? 'price-low' : 
+        //                 currentPrice < this.priceThreshold * 1.5 ? 'price-medium' : 'price-high';
         
-        document.getElementById('currentPrice').innerHTML = 
-            `<span class="price-current ${priceClass}">€${currentPrice.toFixed(2)}</span><br>per MWh`;
+        // document.getElementById('currentPrice').innerHTML = 
+        //     `<span class="price-current ${priceClass}">€${currentPrice.toFixed(2)}</span><br>per MWh`;
         
         // Price statistics from all sources
         const prices = allDataPoints.map(item => item.price);
