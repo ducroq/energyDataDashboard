@@ -2,7 +2,7 @@ class EnergyDashboard {
     constructor() {
         this.energyData = null;
         this.currentTimeRange = 'all';
-        this.priceThreshold = 100;
+        this.priceThreshold = 0;
         this.init();
     }
 
