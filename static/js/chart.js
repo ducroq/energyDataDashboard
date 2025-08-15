@@ -43,18 +43,39 @@ class EnergyDashboard {
 
     async loadEnergyZeroData() {
         try {
-            const today = new Date().toISOString().split('T')[0];
-            const url = `https://api.energyzero.nl/v1/energyprices?fromDate=${today}&tillDate=${today}&interval=4&usageType=1&inclBtw=true`;
+            // Use local date in YYYY-MM-DD format (no timezone conversion)
+            const today = new Date();
+            const localDate = today.getFullYear() + '-' + 
+                            String(today.getMonth() + 1).padStart(2, '0') + '-' + 
+                            String(today.getDate()).padStart(2, '0');
+            
+            const url = `https://api.energyzero.nl/v1/energyprices?fromDate=${localDate}&tillDate=${localDate}&interval=4&usageType=1&inclBtw=true`;
             
             console.log('Fetching Energy Zero data from:', url);
             
             const response = await fetch(url);
             if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                // Try yesterday if today fails (data might not be available yet)
+                const yesterday = new Date(today);
+                yesterday.setDate(yesterday.getDate() - 1);
+                const yesterdayDate = yesterday.getFullYear() + '-' + 
+                                   String(yesterday.getMonth() + 1).padStart(2, '0') + '-' + 
+                                   String(yesterday.getDate()).padStart(2, '0');
+                
+                console.log('Trying yesterday:', yesterdayDate);
+                const fallbackUrl = `https://api.energyzero.nl/v1/energyprices?fromDate=${yesterdayDate}&tillDate=${yesterdayDate}&interval=4&usageType=1&inclBtw=true`;
+                const fallbackResponse = await fetch(fallbackUrl);
+                
+                if (!fallbackResponse.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await fallbackResponse.json();
+                this.energyZeroData = this.processEnergyZeroData(data);
+            } else {
+                const data = await response.json();
+                this.energyZeroData = this.processEnergyZeroData(data);
             }
-            
-            const data = await response.json();
-            this.energyZeroData = this.processEnergyZeroData(data);
             
             console.log('✅ Loaded Energy Zero data:', this.energyZeroData);
             
@@ -66,8 +87,13 @@ class EnergyDashboard {
 
     async loadEnergyZeroHistoricalData() {
         try {
-            const startDate = this.startDateTime.toISOString().split('T')[0];
-            const endDate = this.endDateTime.toISOString().split('T')[0];
+            // Format dates properly for Energy Zero API
+            const startDate = this.startDateTime.getFullYear() + '-' + 
+                            String(this.startDateTime.getMonth() + 1).padStart(2, '0') + '-' + 
+                            String(this.startDateTime.getDate()).padStart(2, '0');
+            const endDate = this.endDateTime.getFullYear() + '-' + 
+                          String(this.endDateTime.getMonth() + 1).padStart(2, '0') + '-' + 
+                          String(this.endDateTime.getDate()).padStart(2, '0');
             
             console.log(`Loading Energy Zero historical data from ${startDate} to ${endDate}`);
             
@@ -88,7 +114,9 @@ class EnergyDashboard {
                 const currentDate = new Date(this.startDateTime);
                 
                 while (currentDate <= this.endDateTime) {
-                    const dateStr = currentDate.toISOString().split('T')[0];
+                    const dateStr = currentDate.getFullYear() + '-' + 
+                                  String(currentDate.getMonth() + 1).padStart(2, '0') + '-' + 
+                                  String(currentDate.getDate()).padStart(2, '0');
                     const url = `https://api.energyzero.nl/v1/energyprices?fromDate=${dateStr}&tillDate=${dateStr}&interval=4&usageType=1&inclBtw=true`;
                     
                     try {
@@ -631,21 +659,7 @@ class EnergyDashboard {
     updateChart() {
         const traces = this.processEnergyDataForChart(this.currentTimeRange);
         
-        if (traces.length > 0 && this.allTimestamps && this.allTimestamps.length > 0) {
-            traces.push({
-                x: this.allTimestamps,
-                y: new Array(this.allTimestamps.length).fill(this.priceThreshold),
-                type: 'scatter',
-                mode: 'lines',
-                name: 'Threshold',
-                line: { 
-                    width: 2, 
-                    color: '#6b7280', 
-                    dash: 'dash' 
-                },
-                hoverinfo: 'skip'
-            });
-        }
+        // Remove the useless threshold line - don't add it anymore
         
         const layout = {
             title: {
@@ -688,18 +702,15 @@ class EnergyDashboard {
     }
 
     getCurrentTimeLineShape() {
-        // Only show current time line when viewing data that includes current time
         const now = new Date();
         const currentTimeISO = now.toISOString();
         
-        // Check if current time should be visible based on our time range
+        // Check if current time should be visible
         let showCurrentTimeLine = false;
         
         if (!this.customTimeRange) {
-            // In "now + forecast" mode, always show current time line
             showCurrentTimeLine = true;
         } else if (this.startDateTime && this.endDateTime) {
-            // In custom range mode, only show if current time is within range
             showCurrentTimeLine = (now >= this.startDateTime && now <= this.endDateTime);
         }
         
@@ -715,8 +726,8 @@ class EnergyDashboard {
             y1: 1,
             yref: 'paper',
             line: {
-                color: '#ff6b6b',
-                width: 3,
+                color: '#ff3333',
+                width: 4,
                 dash: 'solid'
             },
             layer: 'above'
@@ -765,36 +776,13 @@ class EnergyDashboard {
         document.getElementById('lastUpdate').textContent = 
             `Last updated: ${new Date(lastUpdate).toLocaleString()}`;
         
-        const prices = allDataPoints.map(item => item.price);
-        const min = Math.min(...prices);
-        const max = Math.max(...prices);
-        const avg = prices.reduce((a, b) => a + b, 0) / prices.length;
-        
-        document.getElementById('priceStats').innerHTML = 
-            `Min: €${min.toFixed(2)}<br>Max: €${max.toFixed(2)}<br>Average: €${avg.toFixed(2)}`;
-        
-        const cheapHours = allDataPoints.filter(item => item.price < this.priceThreshold);
+        // Update cheap hours with a reasonable threshold
+        const reasonableThreshold = 50; // Default 50 EUR/MWh threshold
+        const cheapHours = allDataPoints.filter(item => item.price > 0 && item.price < reasonableThreshold);
         
         document.getElementById('cheapHours').innerHTML = 
-            `${cheapHours.length} data points below €${this.priceThreshold}<br>` +
+            `${cheapHours.length} hours below €${reasonableThreshold}<br>` +
             `(${((cheapHours.length / allDataPoints.length) * 100).toFixed(1)}% of all data)`;
-
-        // Add Energy Zero comparison
-        if (this.energyZeroData && this.energyData) {
-            const priceStatsElement = document.getElementById('priceStats');
-            if (priceStatsElement) {
-                const comparison = this.compareEnergyZeroWithForecasts();
-                if (comparison) {
-                    priceStatsElement.innerHTML += `
-                        <hr style="margin: 10px 0; border-color: #333;">
-                        <div class="live-comparison">
-                            <strong>Live vs Forecast:</strong><br>
-                            ${comparison}
-                        </div>
-                    `;
-                }
-            }
-        }
     }
 
     updateLiveDataInfo() {
