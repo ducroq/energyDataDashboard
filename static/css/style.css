@@ -96,6 +96,7 @@ body {
     padding: 20px;
     margin-bottom: 30px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    position: relative;
 }
 
 #energyChart {
@@ -140,6 +141,406 @@ body {
 .price-medium { color: #f59e0b; }
 .price-low { color: #4ade80; }
 
+/* Live Data Panel Styling */
+.live-data-card {
+    border-left: 4px solid #10b981;
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%);
+}
+
+.live-data-card h3 {
+    color: #10b981;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.live-current-price {
+    text-align: center;
+    margin: 15px 0;
+    padding: 15px;
+    background: rgba(16, 185, 129, 0.1);
+    border-radius: 10px;
+    border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.live-current-price .price-current {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #10b981;
+    line-height: 1;
+}
+
+.live-current-price .price-unit {
+    font-size: 0.9rem;
+    color: #94a3b8;
+    margin-top: 5px;
+}
+
+.live-current-price .price-time {
+    font-size: 0.8rem;
+    color: #6b7280;
+    margin-top: 8px;
+    font-style: italic;
+}
+
+.price-unavailable {
+    color: #f59e0b;
+    font-style: italic;
+    padding: 20px;
+}
+
+.live-stats {
+    margin: 15px 0;
+}
+
+.stat-row {
+    display: flex;
+    justify-content: space-between;
+    margin: 8px 0;
+    padding: 5px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.stat-row:last-child {
+    border-bottom: none;
+}
+
+.stat-row span:first-child {
+    color: #94a3b8;
+    font-size: 0.9rem;
+}
+
+.stat-row span:last-child {
+    color: #ffffff;
+    font-weight: 500;
+}
+
+.live-update-time {
+    font-size: 0.8rem;
+    color: #6b7280;
+    text-align: center;
+    margin-top: 15px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.live-error {
+    text-align: center;
+    padding: 20px;
+    color: #ef4444;
+}
+
+.error-details {
+    font-size: 0.8rem;
+    color: #94a3b8;
+    margin-top: 5px;
+}
+
+/* Live Data Controls */
+.live-data-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    margin-top: 15px;
+    padding: 15px;
+    background: rgba(16, 185, 129, 0.05);
+    border-radius: 10px;
+    border: 1px solid rgba(16, 185, 129, 0.1);
+}
+
+.toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.toggle-label input[type="checkbox"] {
+    accent-color: #10b981;
+    transform: scale(1.2);
+}
+
+.toggle-text {
+    color: #ffffff;
+    font-weight: 500;
+}
+
+.refresh-btn {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    min-width: 100px;
+}
+
+.refresh-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.refresh-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Live comparison styling */
+.live-comparison {
+    background: rgba(16, 185, 129, 0.1);
+    padding: 10px;
+    border-radius: 6px;
+    border-left: 3px solid #10b981;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+/* Date/Time Controls Styling */
+.datetime-controls {
+    background: rgba(17, 17, 17, 0.8);
+    border: 1px solid #333333;
+    border-radius: 15px;
+    padding: 20px;
+    margin: 20px 0;
+    backdrop-filter: blur(10px);
+}
+
+.time-range-section h4 {
+    color: #ffffff;
+    margin-bottom: 15px;
+    text-align: center;
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+/* Quick Select Buttons */
+.quick-select-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.quick-btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: #cccccc;
+    border: 1px solid #444444;
+    border-radius: 8px;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.quick-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: #60a5fa;
+    color: #ffffff;
+}
+
+.quick-btn.active {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    border-color: #3b82f6;
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+/* Custom Range Inputs */
+.custom-range-inputs {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    padding: 20px;
+    border: 1px solid #444444;
+    margin-bottom: 15px;
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.datetime-input-group {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 15px;
+}
+
+.datetime-input-group label {
+    color: #cccccc;
+    font-size: 0.9rem;
+    margin-bottom: 5px;
+    font-weight: 500;
+}
+
+.datetime-input-group input[type="datetime-local"] {
+    background: #1a1a1a;
+    border: 1px solid #444444;
+    border-radius: 6px;
+    padding: 10px;
+    color: #ffffff;
+    font-size: 0.9rem;
+    transition: border-color 0.2s ease;
+}
+
+.datetime-input-group input[type="datetime-local"]:focus {
+    outline: none;
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.2);
+}
+
+.datetime-input-group input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+    background-color: #60a5fa;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.datetime-input-group input[type="datetime-local"]::-webkit-datetime-edit {
+    color: #ffffff;
+}
+
+.datetime-input-group input[type="datetime-local"]::-webkit-datetime-edit-fields-wrapper {
+    color: #ffffff;
+}
+
+/* DateTime Action Buttons */
+.datetime-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 15px;
+}
+
+.apply-btn {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.apply-btn:hover {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.reset-btn {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    border: 1px solid #ef4444;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.reset-btn:hover {
+    background: rgba(239, 68, 68, 0.2);
+    transform: translateY(-1px);
+}
+
+/* Range Info Display */
+.range-info {
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    border-radius: 8px;
+    padding: 12px;
+    text-align: center;
+    color: #60a5fa;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+/* Time Range Display in Live Panel */
+.time-range-display {
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.time-range-title {
+    color: #60a5fa;
+    font-weight: 500;
+    font-size: 0.9rem;
+    margin-bottom: 5px;
+}
+
+.time-range-dates {
+    color: #ffffff;
+    font-size: 0.8rem;
+    line-height: 1.3;
+    margin-bottom: 5px;
+}
+
+.time-range-duration {
+    color: #94a3b8;
+    font-size: 0.8rem;
+    font-style: italic;
+}
+
+/* Loading Indicator */
+.loading-indicator {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #60a5fa;
+    font-size: 1.1rem;
+    font-weight: 500;
+    background: rgba(0, 0, 0, 0.8);
+    padding: 15px 25px;
+    border-radius: 10px;
+    border: 1px solid #60a5fa;
+    z-index: 10;
+}
+
+/* Animation for live data updates */
+.live-data-card.updating {
+    animation: pulse-green 1s ease-in-out;
+}
+
+@keyframes pulse-green {
+    0% {
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    }
+    50% {
+        box-shadow: 0 8px 32px rgba(16, 185, 129, 0.3);
+    }
+    100% {
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    }
+}
+
+/* Status indicator for live data */
+.live-status-indicator {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #10b981;
+    margin-left: 5px;
+    animation: blink 2s infinite;
+}
+
+@keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0.3; }
+}
+
+/* Responsive Design */
 @media (max-width: 768px) {
     .dashboard {
         padding: 15px;
@@ -157,5 +558,133 @@ body {
     
     #energyChart {
         height: 400px;
+    }
+    
+    .live-data-controls {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .live-current-price .price-current {
+        font-size: 2rem;
+    }
+    
+    .stat-row {
+        font-size: 0.85rem;
+    }
+    
+    .quick-select-buttons {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .quick-btn {
+        width: 100%;
+        max-width: 200px;
+    }
+    
+    .datetime-actions {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .apply-btn,
+    .reset-btn {
+        width: 100%;
+        max-width: 200px;
+    }
+    
+    .datetime-input-group {
+        margin-bottom: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .datetime-controls {
+        padding: 15px;
+        margin: 15px 0;
+    }
+    
+    .time-range-section h4 {
+        font-size: 1rem;
+    }
+    
+    .quick-btn {
+        padding: 10px 16px;
+        font-size: 0.85rem;
+    }
+    
+    .datetime-input-group input[type="datetime-local"] {
+        padding: 12px;
+        font-size: 16px; /* Prevent zoom on iOS */
+    }
+}
+
+/* Focus states for accessibility */
+.quick-btn:focus,
+.apply-btn:focus,
+.reset-btn:focus {
+    outline: 2px solid #60a5fa;
+    outline-offset: 2px;
+}
+
+.datetime-input-group input[type="datetime-local"]:focus {
+    box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2);
+}
+
+/* Dark mode enhancements */
+@media (prefers-color-scheme: dark) {
+    .datetime-input-group input[type="datetime-local"] {
+        color-scheme: dark;
+        background: #0f0f0f;
+        border-color: #555555;
+    }
+    
+    .datetime-input-group input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+        filter: invert(1);
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .datetime-controls {
+        border-width: 2px;
+        border-color: #ffffff;
+    }
+    
+    .quick-btn {
+        border-width: 2px;
+    }
+    
+    .quick-btn.active {
+        background: #0066cc;
+        border-color: #ffffff;
+    }
+    
+    .datetime-input-group input[type="datetime-local"] {
+        border-width: 2px;
+        border-color: #ffffff;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .quick-btn,
+    .apply-btn,
+    .reset-btn,
+    .custom-range-inputs {
+        transition: none;
+    }
+    
+    .apply-btn:hover,
+    .reset-btn:hover {
+        transform: none;
+    }
+}
+
+/* Print styles */
+@media print {
+    .datetime-controls {
+        display: none;
     }
 }
