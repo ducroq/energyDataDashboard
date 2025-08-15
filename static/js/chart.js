@@ -545,7 +545,7 @@ class EnergyDashboard {
 
         const dataSources = [
             { key: 'entsoe', name: 'ENTSO-E', color: '#60a5fa' },
-            { key: 'energy_zero', name: 'EnergyZero', color: '#34d399' },
+            { key: 'energy_zero', name: 'EnergyZero', color: '#0e4531ff' },
             { key: 'epex', name: 'EPEX', color: '#f59e0b' },
             { key: 'elspot', name: 'Elspot', color: '#ef4444' }
         ];
