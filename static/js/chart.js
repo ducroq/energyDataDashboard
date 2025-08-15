@@ -181,12 +181,16 @@ class EnergyDashboard {
         };
 
         rawData.Prices.forEach(pricePoint => {
-            const timestamp = new Date(pricePoint.readingDate);
+            // const timestamp = new Date(pricePoint.readingDate);
+            const utcTimestamp = new Date(pricePoint.readingDate);
+            const localTimestamp = new Date(utcTimestamp.getTime() + (2 * 60 * 60 * 1000));
             const priceEurMwh = pricePoint.price * 1000;
             
             const hourData = {
-                timestamp: timestamp.toISOString(),
-                hour: timestamp.getHours(),
+                // timestamp: timestamp.toISOString(),
+                // hour: timestamp.getHours(),
+                timestamp: localTimestamp.toISOString(),
+                hour: localTimestamp.getHours(),
                 price_eur_kwh: pricePoint.price,
                 price_eur_mwh: priceEurMwh,
                 reading_date: pricePoint.readingDate
@@ -194,7 +198,8 @@ class EnergyDashboard {
 
             processedData.today_prices.push(hourData);
 
-            if (timestamp.getTime() === currentHour.getTime()) {
+            // if (timestamp.getTime() === currentHour.getTime()) {
+            if (localTimestamp.getTime() === currentHour.getTime()) {
                 processedData.current_price = hourData;
             }
         });
