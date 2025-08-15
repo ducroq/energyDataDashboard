@@ -545,7 +545,7 @@ class EnergyDashboard {
 
         const dataSources = [
             { key: 'entsoe', name: 'ENTSO-E', color: '#60a5fa' },
-            { key: 'energy_zero', name: 'EnergyZero', color: '#0e4531ff' },
+            { key: 'energy_zero', name: 'EnergyZero', color: '#10b981'},
             { key: 'epex', name: 'EPEX', color: '#f59e0b' },
             { key: 'elspot', name: 'Elspot', color: '#ef4444' }
         ];
@@ -650,12 +650,12 @@ class EnergyDashboard {
                     name: this.customTimeRange ? 'Energy Zero (Historical)' : 'Energy Zero (Live)',
                     line: { 
                         width: 4,
-                        color: '#10b981',
+                        color: '#0e4531ff', //'#10b981',
                         dash: 'solid'
                     },
                     marker: { 
                         size: 6,
-                        color: '#10b981',
+                        color: '#0e4531ff', //'#10b981',
                         symbol: this.customTimeRange ? 'circle' : 'diamond',
                         line: { color: '#ffffff', width: 1 }
                     },
