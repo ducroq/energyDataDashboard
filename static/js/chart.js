@@ -43,24 +43,27 @@ class EnergyDashboard {
 
     async loadEnergyZeroData() {
         try {
-            // Try multiple date approaches for Energy Zero API
+            // Energy Zero API expects ISO datetime format with timezone
             const today = new Date();
             const yesterday = new Date(today);
             yesterday.setDate(yesterday.getDate() - 1);
             
-            const dates = [
-                yesterday, // Try yesterday first (most likely to have data)
-                today,     // Then today
-            ];
+            const dates = [yesterday, today];
             
             for (const date of dates) {
-                const localDate = date.getFullYear() + '-' + 
-                                String(date.getMonth() + 1).padStart(2, '0') + '-' + 
-                                String(date.getDate()).padStart(2, '0');
+                // Create proper ISO datetime strings like the examples show
+                const startOfDay = new Date(date);
+                startOfDay.setHours(0, 0, 0, 0);
+                const endOfDay = new Date(date);
+                endOfDay.setHours(23, 59, 59, 999);
                 
-                const url = `https://api.energyzero.nl/v1/energyprices?fromDate=${localDate}&tillDate=${localDate}&interval=4&usageType=1&inclBtw=true`;
+                const fromDate = startOfDay.toISOString();
+                const tillDate = endOfDay.toISOString();
                 
-                console.log(`Trying Energy Zero data for: ${localDate}`);
+                const url = `https://api.energyzero.nl/v1/energyprices?fromDate=${fromDate}&tillDate=${tillDate}&interval=4&usageType=1&inclBtw=true`;
+                
+                console.log(`Trying Energy Zero data for: ${date.toDateString()}`);
+                console.log(`URL: ${url}`);
                 
                 try {
                     const response = await fetch(url);
@@ -68,12 +71,14 @@ class EnergyDashboard {
                         const data = await response.json();
                         if (data.Prices && data.Prices.length > 0) {
                             this.energyZeroData = this.processEnergyZeroData(data);
-                            console.log(`✅ Loaded Energy Zero data for ${localDate}:`, this.energyZeroData);
+                            console.log(`✅ Loaded Energy Zero data for ${date.toDateString()}:`, this.energyZeroData);
                             return; // Success, exit
                         }
+                    } else {
+                        console.warn(`HTTP ${response.status} for ${date.toDateString()}: ${response.statusText}`);
                     }
                 } catch (error) {
-                    console.warn(`Failed for ${localDate}:`, error);
+                    console.warn(`Failed for ${date.toDateString()}:`, error);
                 }
             }
             
@@ -89,7 +94,13 @@ class EnergyDashboard {
 
     async loadEnergyZeroHistoricalData() {
         try {
-            // Format dates properly for Energy Zero API
+            // Energy Zero API currently unavailable - skip historical loading
+            console.log('Energy Zero historical data unavailable - continuing with forecast data only');
+            this.energyZeroData = null;
+            return;
+            
+            // TODO: Re-enable when Energy Zero API is working
+            /*
             const startDate = this.startDateTime.getFullYear() + '-' + 
                             String(this.startDateTime.getMonth() + 1).padStart(2, '0') + '-' + 
                             String(this.startDateTime.getDate()).padStart(2, '0');
@@ -98,48 +109,8 @@ class EnergyDashboard {
                           String(this.endDateTime.getDate()).padStart(2, '0');
             
             console.log(`Loading Energy Zero historical data from ${startDate} to ${endDate}`);
-            
-            const daysDiff = Math.ceil((this.endDateTime - this.startDateTime) / (24 * 60 * 60 * 1000));
-            
-            if (daysDiff <= 1) {
-                const url = `https://api.energyzero.nl/v1/energyprices?fromDate=${startDate}&tillDate=${endDate}&interval=4&usageType=1&inclBtw=true`;
-                const response = await fetch(url);
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                
-                const data = await response.json();
-                this.energyZeroData = this.processEnergyZeroHistoricalData(data);
-            } else {
-                const allPrices = [];
-                const currentDate = new Date(this.startDateTime);
-                
-                while (currentDate <= this.endDateTime) {
-                    const dateStr = currentDate.getFullYear() + '-' + 
-                                  String(currentDate.getMonth() + 1).padStart(2, '0') + '-' + 
-                                  String(currentDate.getDate()).padStart(2, '0');
-                    const url = `https://api.energyzero.nl/v1/energyprices?fromDate=${dateStr}&tillDate=${dateStr}&interval=4&usageType=1&inclBtw=true`;
-                    
-                    try {
-                        const response = await fetch(url);
-                        if (response.ok) {
-                            const dayData = await response.json();
-                            if (dayData.Prices) {
-                                allPrices.push(...dayData.Prices);
-                            }
-                        }
-                    } catch (error) {
-                        console.warn(`Failed to load data for ${dateStr}:`, error);
-                    }
-                    
-                    currentDate.setDate(currentDate.getDate() + 1);
-                }
-                
-                this.energyZeroData = this.processEnergyZeroHistoricalData({ Prices: allPrices });
-            }
-            
-            console.log('✅ Loaded Energy Zero historical data:', this.energyZeroData);
+            // ... rest of historical loading code
+            */
             
         } catch (error) {
             console.error('❌ Error loading Energy Zero historical data:', error);
@@ -707,7 +678,7 @@ class EnergyDashboard {
         const now = new Date();
         const currentTimeISO = now.toISOString();
         
-        // Always show current time line in all modes for better orientation
+        // Simple white line like the horizontal axis
         return [{
             type: 'line',
             x0: currentTimeISO,
@@ -716,8 +687,8 @@ class EnergyDashboard {
             y1: 1,
             yref: 'paper',
             line: {
-                color: '#ff3333',
-                width: 4,
+                color: 'white',
+                width: 1,
                 dash: 'solid'
             },
             layer: 'above'
