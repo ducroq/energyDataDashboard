@@ -94,23 +94,69 @@ class EnergyDashboard {
 
     async loadEnergyZeroHistoricalData() {
         try {
-            // Energy Zero API currently unavailable - skip historical loading
-            console.log('Energy Zero historical data unavailable - continuing with forecast data only');
-            this.energyZeroData = null;
-            return;
+            // Format dates properly for Energy Zero API - needs ISO format with timezone
+            console.log(`Loading Energy Zero historical data from ${this.startDateTime.toDateString()} to ${this.endDateTime.toDateString()}`);
             
-            // TODO: Re-enable when Energy Zero API is working
-            /*
-            const startDate = this.startDateTime.getFullYear() + '-' + 
-                            String(this.startDateTime.getMonth() + 1).padStart(2, '0') + '-' + 
-                            String(this.startDateTime.getDate()).padStart(2, '0');
-            const endDate = this.endDateTime.getFullYear() + '-' + 
-                          String(this.endDateTime.getMonth() + 1).padStart(2, '0') + '-' + 
-                          String(this.endDateTime.getDate()).padStart(2, '0');
+            const daysDiff = Math.ceil((this.endDateTime - this.startDateTime) / (24 * 60 * 60 * 1000));
             
-            console.log(`Loading Energy Zero historical data from ${startDate} to ${endDate}`);
-            // ... rest of historical loading code
-            */
+            if (daysDiff <= 1) {
+                // Single day request
+                const startOfDay = new Date(this.startDateTime);
+                startOfDay.setHours(0, 0, 0, 0);
+                const endOfDay = new Date(this.endDateTime);
+                endOfDay.setHours(23, 59, 59, 999);
+                
+                const fromDate = startOfDay.toISOString();
+                const tillDate = endOfDay.toISOString();
+                
+                const url = `https://api.energyzero.nl/v1/energyprices?fromDate=${fromDate}&tillDate=${tillDate}&interval=4&usageType=1&inclBtw=true`;
+                console.log(`Single day URL: ${url}`);
+                
+                const response = await fetch(url);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                this.energyZeroData = this.processEnergyZeroHistoricalData(data);
+            } else {
+                // Multiple day requests
+                const allPrices = [];
+                const currentDate = new Date(this.startDateTime);
+                
+                while (currentDate <= this.endDateTime) {
+                    const startOfDay = new Date(currentDate);
+                    startOfDay.setHours(0, 0, 0, 0);
+                    const endOfDay = new Date(currentDate);
+                    endOfDay.setHours(23, 59, 59, 999);
+                    
+                    const fromDate = startOfDay.toISOString();
+                    const tillDate = endOfDay.toISOString();
+                    
+                    const url = `https://api.energyzero.nl/v1/energyprices?fromDate=${fromDate}&tillDate=${tillDate}&interval=4&usageType=1&inclBtw=true`;
+                    
+                    try {
+                        const response = await fetch(url);
+                        if (response.ok) {
+                            const dayData = await response.json();
+                            if (dayData.Prices) {
+                                allPrices.push(...dayData.Prices);
+                            }
+                        } else {
+                            console.warn(`Failed for ${currentDate.toDateString()}: HTTP ${response.status}`);
+                        }
+                    } catch (error) {
+                        console.warn(`Failed to load data for ${currentDate.toDateString()}:`, error);
+                    }
+                    
+                    currentDate.setDate(currentDate.getDate() + 1);
+                }
+                
+                this.energyZeroData = this.processEnergyZeroHistoricalData({ Prices: allPrices });
+            }
+            
+            console.log('✅ Loaded Energy Zero historical data:', this.energyZeroData);
             
         } catch (error) {
             console.error('❌ Error loading Energy Zero historical data:', error);
@@ -183,23 +229,28 @@ class EnergyDashboard {
         };
 
         rawData.Prices.forEach(pricePoint => {
-            const timestamp = new Date(pricePoint.readingDate);
+            // Energy Zero API returns UTC timestamps (ending in Z)
+            // Convert to local Netherlands time for consistency
+            const utcTimestamp = new Date(pricePoint.readingDate);
+            const localTimestamp = new Date(utcTimestamp.getTime());
             
+            // Filter by selected time range (using local time)
             if (this.startDateTime && this.endDateTime) {
-                if (timestamp < this.startDateTime || timestamp > this.endDateTime) {
-                    return;
+                if (localTimestamp < this.startDateTime || localTimestamp > this.endDateTime) {
+                    return; // Skip this price point
                 }
             }
             
-            const priceEurMwh = pricePoint.price * 1000;
+            const priceEurMwh = pricePoint.price * 1000; // Convert EUR/kWh to EUR/MWh
             
             const hourData = {
-                timestamp: timestamp.toISOString(),
-                hour: timestamp.getHours(),
-                date: timestamp.toISOString().split('T')[0],
+                timestamp: localTimestamp.toISOString(),
+                hour: localTimestamp.getHours(),
+                date: localTimestamp.toISOString().split('T')[0],
                 price_eur_kwh: pricePoint.price,
                 price_eur_mwh: priceEurMwh,
-                reading_date: pricePoint.readingDate
+                reading_date: pricePoint.readingDate,
+                utc_timestamp: utcTimestamp.toISOString() // Keep original for debugging
             };
 
             processedData.today_prices.push(hourData);
