@@ -5,12 +5,22 @@ Uses SecureDataHandler class with AES-CBC encryption and HMAC-SHA256.
 """
 
 import os
+import sys
 import json
 import base64
 import urllib.request
 import time
+import logging
 from datetime import datetime
 from utils.secure_data_handler import SecureDataHandler
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+logger = logging.getLogger(__name__)
 
 def json_serializer(obj):
     """Handle datetime serialization."""
@@ -38,26 +48,26 @@ def fetch_with_retry(url, max_retries=3, initial_delay=1):
 
     for attempt in range(max_retries):
         try:
-            print(f"Attempt {attempt + 1}/{max_retries}: Fetching {url}")
+            logger.info(f"Attempt {attempt + 1}/{max_retries}: Fetching {url}")
             with urllib.request.urlopen(url, timeout=30) as response:
                 data = response.read().decode()
-                print(f"SUCCESS: Fetched data ({len(data)} characters)")
+                logger.info(f"Successfully fetched {len(data)} characters from {url}")
                 return data
         except urllib.error.HTTPError as e:
             last_error = e
-            print(f"ERROR: HTTP {e.code}: {e.reason}")
+            logger.error(f"HTTP {e.code} error: {e.reason}")
             if e.code in [404, 403, 401]:  # Don't retry on client errors
                 raise
         except urllib.error.URLError as e:
             last_error = e
-            print(f"ERROR: Network error: {e.reason}")
+            logger.error(f"Network error: {e.reason}")
         except Exception as e:
             last_error = e
-            print(f"ERROR: {e}")
+            logger.error(f"Unexpected error: {e}")
 
         # If not the last attempt, wait before retrying
         if attempt < max_retries - 1:
-            print(f"Waiting {delay}s before retry...")
+            logger.info(f"Waiting {delay}s before retry...")
             time.sleep(delay)
             delay *= 2  # Exponential backoff
 
@@ -106,16 +116,16 @@ def fetch_and_decrypt_energy_data():
         encryption_key_b64 = os.environ.get('ENCRYPTION_KEY_B64')
         hmac_key_b64 = os.environ.get('HMAC_KEY_B64')
 
-        print("Validating environment variables...")
+        logger.info("Validating environment variables...")
 
         # Validate and decode the keys
         try:
             encryption_key = validate_base64_key(encryption_key_b64, 'ENCRYPTION_KEY_B64', expected_length=32)
             hmac_key = validate_base64_key(hmac_key_b64, 'HMAC_KEY_B64', expected_length=32)
-            print(f"SUCCESS: Encryption key validated: {len(encryption_key)} bytes (256-bit)")
-            print(f"SUCCESS: HMAC key validated: {len(hmac_key)} bytes (256-bit)")
+            logger.info(f"Encryption key validated: {len(encryption_key)} bytes (256-bit)")
+            logger.info(f"HMAC key validated: {len(hmac_key)} bytes (256-bit)")
         except ValueError as e:
-            print(f"ERROR: Environment variable validation failed: {e}")
+            logger.error(f"Environment variable validation failed: {e}")
             return False
         
         # Initialize your SecureDataHandler with the decoded keys
@@ -123,12 +133,12 @@ def fetch_and_decrypt_energy_data():
         
         # Fetch encrypted data from GitHub Pages endpoint with retry logic
         url = 'https://ducroq.github.io/energydatahub/energy_price_forecast.json'
-        print(f"Fetching energy data from {url}")
+        logger.info(f"Fetching energy data from {url}")
 
         encrypted_data = fetch_with_retry(url, max_retries=3, initial_delay=2)
-        
+
         # Decrypt using your handler (same method as your example)
-        print("Decrypting data...")
+        logger.info("Decrypting data...")
         decrypted = handler.decrypt_and_verify(encrypted_data)
         
         # Ensure data directory exists
@@ -138,37 +148,35 @@ def fetch_and_decrypt_energy_data():
         # Save decrypted data with datetime serialization
         with open(output_path, 'w') as f:
             json.dump(decrypted, f, indent=2, default=json_serializer)
-        
-        print(f"Successfully decrypted and saved energy data to {output_path}")
-        
+
+        logger.info(f"Successfully decrypted and saved energy data to {output_path}")
+
         # Log some info about the data
         if isinstance(decrypted, list):
-            print(f"Data contains {len(decrypted)} records")
+            logger.info(f"Data contains {len(decrypted)} records")
             if len(decrypted) > 0:
-                print(f"First record: {decrypted[0]}")
+                logger.debug(f"First record: {decrypted[0]}")
         elif isinstance(decrypted, dict):
-            print(f"Data is a dict with keys: {list(decrypted.keys())}")
+            logger.info(f"Data is a dict with keys: {list(decrypted.keys())}")
         else:
-            print(f"Data type: {type(decrypted)}")
-        
+            logger.info(f"Data type: {type(decrypted)}")
+
         return True
-        
+
     except Exception as e:
-        print(f"Error decrypting energy data: {e}")
-        import traceback
-        traceback.print_exc()
+        logger.error(f"Error decrypting energy data: {e}", exc_info=True)
         return False
 
 def main():
     """Main function."""
-    print("Starting energy data decryption...")
+    logger.info("Starting energy data decryption...")
     success = fetch_and_decrypt_energy_data()
-    
+
     if success:
-        print("Energy data decryption completed successfully!")
+        logger.info("Energy data decryption completed successfully!")
     else:
-        print("Energy data decryption failed!")
-    
+        logger.error("Energy data decryption failed!")
+
     return success
 
 if __name__ == '__main__':
