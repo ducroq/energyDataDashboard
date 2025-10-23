@@ -19,6 +19,62 @@ const CONSTANTS = {
     ONE_DAY_MS: CONSTANTS.ONE_DAY_MS
 };
 
+// Data source configuration
+const DATA_SOURCES = {
+    // Historical data sources from energy_price_forecast.json
+    forecast: [
+        {
+            key: 'entsoe',
+            name: 'ENTSO-E',
+            color: '#60a5fa',
+            description: 'European Network of Transmission System Operators for Electricity'
+        },
+        {
+            key: 'energy_zero',
+            name: 'EnergyZero',
+            color: '#10b981',
+            description: 'Dutch energy provider day-ahead prices'
+        },
+        {
+            key: 'epex',
+            name: 'EPEX',
+            color: '#f59e0b',
+            description: 'European Power Exchange'
+        },
+        {
+            key: 'elspot',
+            name: 'Elspot',
+            color: '#ef4444',
+            description: 'Nord Pool day-ahead market'
+        }
+    ],
+
+    // Live Energy Zero data configuration
+    energyZero: {
+        name: {
+            live: 'Energy Zero (Live)',
+            historical: 'Energy Zero (Historical)'
+        },
+        color: '#0e4531ff',  // Dark green
+        colorAlt: '#10b981',  // Alternative lighter green (commented out in original)
+        line: {
+            width: 4,
+            dash: 'solid'
+        },
+        marker: {
+            size: 6,
+            symbol: {
+                live: 'diamond',
+                historical: 'circle'
+            },
+            outline: {
+                color: '#ffffff',
+                width: 1
+            }
+        }
+    }
+};
+
 /**
  * Converts a UTC date to Europe/Amsterdam timezone accounting for DST.
  * Handles both CET (UTC+1, winter) and CEST (UTC+2, summer) automatically.
@@ -625,12 +681,8 @@ class EnergyDashboard {
         const now = new Date();
         const cutoffTime = this.getTimeRangeCutoff(timeRange, now);
 
-        const dataSources = [
-            { key: 'entsoe', name: 'ENTSO-E', color: '#60a5fa' },
-            { key: 'energy_zero', name: 'EnergyZero', color: '#10b981'},
-            { key: 'epex', name: 'EPEX', color: '#f59e0b' },
-            { key: 'elspot', name: 'Elspot', color: '#ef4444' }
-        ];
+        // Use centralized data source configuration
+        const dataSources = DATA_SOURCES.forecast;
 
         let allTimestamps = [];
 
@@ -730,24 +782,31 @@ class EnergyDashboard {
                 const xValues = filteredPrices.map(item => item.timestamp);
                 const yValues = filteredPrices.map(item => item.price_eur_mwh);
 
+                const config = DATA_SOURCES.energyZero;
+                const displayName = this.customTimeRange ? config.name.historical : config.name.live;
+                const markerSymbol = this.customTimeRange ? config.marker.symbol.historical : config.marker.symbol.live;
+
                 traces.push({
                     x: xValues,
                     y: yValues,
                     type: 'scatter',
                     mode: 'lines+markers',
-                    name: this.customTimeRange ? 'Energy Zero (Historical)' : 'Energy Zero (Live)',
-                    line: { 
-                        width: 4,
-                        color: '#0e4531ff', //'#10b981',
-                        dash: 'solid'
+                    name: displayName,
+                    line: {
+                        width: config.line.width,
+                        color: config.color,
+                        dash: config.line.dash
                     },
-                    marker: { 
-                        size: 6,
-                        color: '#0e4531ff', //'#10b981',
-                        symbol: this.customTimeRange ? 'circle' : 'diamond',
-                        line: { color: '#ffffff', width: 1 }
+                    marker: {
+                        size: config.marker.size,
+                        color: config.color,
+                        symbol: markerSymbol,
+                        line: {
+                            color: config.marker.outline.color,
+                            width: config.marker.outline.width
+                        }
                     },
-                    hovertemplate: `<b>Energy Zero ${this.customTimeRange ? '(Historical)' : '(Live)'}</b><br>%{x}<br>Price: €%{y:.2f}/MWh<extra></extra>`
+                    hovertemplate: `<b>${displayName}</b><br>%{x}<br>Price: €%{y:.2f}/MWh<extra></extra>`
                 });
 
                 allTimestamps.push(...xValues);
