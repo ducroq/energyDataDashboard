@@ -6,13 +6,14 @@ class EnergyDashboard {
         this.priceThreshold = 0;
         this.liveDataEnabled = true;
         this.refreshInterval = null;
-        
+        this.chartInitialized = false; // Track if chart has been rendered
+
         // Date/time selection properties
         this.startDateTime = null;
         this.endDateTime = null;
         this.customTimeRange = false;
         this.maxHistoricalDays = 30;
-        
+
         this.init();
     }
 
@@ -703,7 +704,13 @@ class EnergyDashboard {
             displaylogo: false
         };
 
-        Plotly.newPlot('energyChart', traces, layout, config);
+        // Use Plotly.react() for efficient updates after initial render
+        if (this.chartInitialized) {
+            Plotly.react('energyChart', traces, layout, config);
+        } else {
+            Plotly.newPlot('energyChart', traces, layout, config);
+            this.chartInitialized = true;
+        }
     }
 
     getCurrentTimeLineShape() {
@@ -959,6 +966,7 @@ class EnergyDashboard {
         if (this.refreshInterval) {
             clearInterval(this.refreshInterval);
         }
+        this.chartInitialized = false;
     }
 }
 
