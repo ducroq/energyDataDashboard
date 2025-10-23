@@ -121,38 +121,53 @@ class EnergyDashboard {
                 const data = await response.json();
                 this.energyZeroData = this.processEnergyZeroData(data, { isHistorical: true });
             } else {
-                // Multiple day requests
-                const allPrices = [];
+                // Multiple day requests - fetch in parallel for better performance
+                const fetchPromises = [];
                 const currentDate = new Date(this.startDateTime);
-                
+
                 while (currentDate <= this.endDateTime) {
                     const startOfDay = new Date(currentDate);
                     startOfDay.setHours(0, 0, 0, 0);
                     const endOfDay = new Date(currentDate);
                     endOfDay.setHours(23, 59, 59, 999);
-                    
+
                     const fromDate = startOfDay.toISOString();
                     const tillDate = endOfDay.toISOString();
-                    
+                    const dateString = currentDate.toDateString();
+
                     const url = `https://api.energyzero.nl/v1/energyprices?fromDate=${fromDate}&tillDate=${tillDate}&interval=4&usageType=1&inclBtw=true`;
-                    
-                    try {
-                        const response = await fetch(url);
-                        if (response.ok) {
-                            const dayData = await response.json();
-                            if (dayData.Prices) {
-                                allPrices.push(...dayData.Prices);
-                            }
-                        } else {
-                            console.warn(`Failed for ${currentDate.toDateString()}: HTTP ${response.status}`);
-                        }
-                    } catch (error) {
-                        console.warn(`Failed to load data for ${currentDate.toDateString()}:`, error);
-                    }
-                    
+
+                    // Create fetch promise for this day
+                    fetchPromises.push(
+                        fetch(url)
+                            .then(response => {
+                                if (response.ok) {
+                                    return response.json();
+                                } else {
+                                    console.warn(`Failed for ${dateString}: HTTP ${response.status}`);
+                                    return null;
+                                }
+                            })
+                            .catch(error => {
+                                console.warn(`Failed to load data for ${dateString}:`, error);
+                                return null;
+                            })
+                    );
+
                     currentDate.setDate(currentDate.getDate() + 1);
                 }
-                
+
+                // Fetch all days in parallel
+                const results = await Promise.all(fetchPromises);
+
+                // Combine all prices
+                const allPrices = [];
+                results.forEach(dayData => {
+                    if (dayData && dayData.Prices) {
+                        allPrices.push(...dayData.Prices);
+                    }
+                });
+
                 this.energyZeroData = this.processEnergyZeroData({ Prices: allPrices }, { isHistorical: true });
             }
             
