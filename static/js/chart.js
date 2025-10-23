@@ -68,6 +68,10 @@ class EnergyDashboard {
         this.customTimeRange = false;
         this.maxHistoricalDays = CONSTANTS.MAX_HISTORICAL_DAYS;
 
+        // API response cache (URL -> {data, timestamp})
+        this.apiCache = new Map();
+        this.cacheExpiryMs = 5 * 60 * 1000; // 5 minutes cache TTL
+
         this.init();
     }
 
@@ -82,6 +86,53 @@ class EnergyDashboard {
         this.updateChart();
         this.updateInfo();
         this.updateLiveDataInfo();
+    }
+
+    /**
+     * Cached fetch wrapper for Energy Zero API calls.
+     * Returns cached response if available and not expired (5 min TTL).
+     *
+     * @param {string} url - The API URL to fetch
+     * @returns {Promise<Response>} The fetch response (cached or fresh)
+     */
+    async cachedFetch(url) {
+        const now = Date.now();
+        const cached = this.apiCache.get(url);
+
+        // Return cached response if valid and not expired
+        if (cached && (now - cached.timestamp) < this.cacheExpiryMs) {
+            console.log(`📦 Cache HIT for: ${url.substring(0, 80)}...`);
+            // Return a mock Response object with the cached data
+            return {
+                ok: true,
+                json: async () => cached.data,
+                status: 200,
+                statusText: 'OK (cached)'
+            };
+        }
+
+        // Cache miss or expired - fetch fresh data
+        console.log(`🌐 Cache MISS for: ${url.substring(0, 80)}...`);
+        const response = await fetch(url);
+
+        // Cache successful responses
+        if (response.ok) {
+            const data = await response.json();
+            this.apiCache.set(url, {
+                data: data,
+                timestamp: now
+            });
+
+            // Return a mock Response with the data
+            return {
+                ok: true,
+                json: async () => data,
+                status: response.status,
+                statusText: response.statusText
+            };
+        }
+
+        return response;
     }
 
     async loadEnergyData() {
@@ -119,9 +170,9 @@ class EnergyDashboard {
                 
                 console.log(`Trying Energy Zero data for: ${date.toDateString()}`);
                 console.log(`URL: ${url}`);
-                
+
                 try {
-                    const response = await fetch(url);
+                    const response = await this.cachedFetch(url);
                     if (response.ok) {
                         const data = await response.json();
                         if (data.Prices && data.Prices.length > 0) {
@@ -166,8 +217,8 @@ class EnergyDashboard {
                 
                 const url = `https://api.energyzero.nl/v1/energyprices?fromDate=${fromDate}&tillDate=${tillDate}&interval=4&usageType=1&inclBtw=true`;
                 console.log(`Single day URL: ${url}`);
-                
-                const response = await fetch(url);
+
+                const response = await this.cachedFetch(url);
                 
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -194,7 +245,7 @@ class EnergyDashboard {
 
                     // Create fetch promise for this day
                     fetchPromises.push(
-                        fetch(url)
+                        this.cachedFetch(url)
                             .then(response => {
                                 if (response.ok) {
                                     return response.json();
