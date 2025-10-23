@@ -41,23 +41,23 @@ def fetch_with_retry(url, max_retries=3, initial_delay=1):
             print(f"Attempt {attempt + 1}/{max_retries}: Fetching {url}")
             with urllib.request.urlopen(url, timeout=30) as response:
                 data = response.read().decode()
-                print(f"✓ Successfully fetched data ({len(data)} characters)")
+                print(f"SUCCESS: Fetched data ({len(data)} characters)")
                 return data
         except urllib.error.HTTPError as e:
             last_error = e
-            print(f"✗ HTTP Error {e.code}: {e.reason}")
+            print(f"ERROR: HTTP {e.code}: {e.reason}")
             if e.code in [404, 403, 401]:  # Don't retry on client errors
                 raise
         except urllib.error.URLError as e:
             last_error = e
-            print(f"✗ Network Error: {e.reason}")
+            print(f"ERROR: Network error: {e.reason}")
         except Exception as e:
             last_error = e
-            print(f"✗ Error: {e}")
+            print(f"ERROR: {e}")
 
         # If not the last attempt, wait before retrying
         if attempt < max_retries - 1:
-            print(f"⏳ Waiting {delay}s before retry...")
+            print(f"Waiting {delay}s before retry...")
             time.sleep(delay)
             delay *= 2  # Exponential backoff
 
