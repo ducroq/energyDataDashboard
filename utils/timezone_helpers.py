@@ -1,5 +1,3 @@
-from timezonefinder import TimezoneFinder
-import reverse_geocoder as rg
 from datetime import datetime, tzinfo
 import pytz
 from zoneinfo import ZoneInfo
@@ -19,6 +17,7 @@ def ensure_timezone(start_time: datetime, end_time: datetime) -> tuple[datetime,
     return start_time, end_time, tz
 
 def get_timezone(lat:float, lon:float) -> ZoneInfo:
+    from timezonefinder import TimezoneFinder
     tf = TimezoneFinder()
     timezone_str = tf.timezone_at(lat=float(lat), lng=float(lon))
     if timezone_str is None:
@@ -26,13 +25,16 @@ def get_timezone(lat:float, lon:float) -> ZoneInfo:
     return ZoneInfo(timezone_str)
 
 def get_timezone_and_country(lat, lng):
+    from timezonefinder import TimezoneFinder
+    import reverse_geocoder as rg
+
     tf = TimezoneFinder()
     timezone_str = tf.timezone_at(lat=lat, lng=lng)
-    
+
     # Get country code
     result = rg.search((lat, lng), mode=1)  # mode=1 returns only one result
     country_code = result[0]['cc']
-    
+
     if timezone_str is None:
         return None, country_code
     return ZoneInfo(timezone_str), country_code
