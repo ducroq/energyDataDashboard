@@ -4,7 +4,20 @@
       "Bash(python -c:*)",
       "Bash(hugo version:*)",
       "Bash(hugo --minify:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(python -m py_compile:*)",
+      "Bash(test:*)",
+      "Bash(timeout 30 bash:*)",
+      "Bash(gh run view:*)",
+      "Bash(gh run list:*)",
+      "Bash(timeout 90 bash -c 'while true; do sleep 10; result=$(gh run list --limit 1 --json status,conclusion 2>/dev/null | jq -r \"\".[0] | \\\"\"\\(.status):\\(.conclusion)\\\"\"\"\"); echo \"\"Status: $result\"\"; if [[ \"\"$result\"\" == \"\"completed:success\"\" ]]; then echo \"\"SUCCESS!\"\"; exit 0; elif [[ \"\"$result\"\" == \"\"completed:failure\"\" ]]; then echo \"\"FAILED\"\"; exit 1; elif [[ \"\"$result\"\" =~ completed ]]; then exit 1; fi; done')",
+      "Bash(hugo server:*)",
+      "Bash(cat:*)",
+      "Bash(curl:*)",
+      "Bash(node --version:*)",
+      "Bash(node --check:*)"
     ],
     "deny": [],
     "ask": []

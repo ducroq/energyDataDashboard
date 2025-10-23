@@ -5,7 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ .Title }} - {{ .Site.Title }}</title>
     <meta name="description" content="{{ .Site.Params.Description }}">
-    
+
+    <!-- DNS prefetch and preconnect for external resources -->
+    <link rel="dns-prefetch" href="https://cdn.plot.ly">
+    <link rel="preconnect" href="https://cdn.plot.ly" crossorigin>
+    <link rel="dns-prefetch" href="https://api.energyzero.nl">
+    <link rel="preconnect" href="https://api.energyzero.nl" crossorigin>
+
     <script src="https://cdn.plot.ly/plotly-2.26.0.min.js"></script>
     <link rel="stylesheet" href="/css/style.css">
 </head>

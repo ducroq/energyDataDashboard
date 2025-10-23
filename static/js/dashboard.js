@@ -247,6 +247,9 @@ class EnergyDashboard {
      * Refresh data and update chart
      */
     async refreshDataAndChart() {
+        // Cancel any pending requests from previous refresh
+        this.apiClient.cancelAllRequests();
+
         this.uiController.showLoadingIndicator();
 
         try {
@@ -260,6 +263,12 @@ class EnergyDashboard {
             this.updateInfo();
             this.updateLiveDataInfo();
         } catch (error) {
+            // Don't show error for aborted requests
+            if (error.name === 'AbortError') {
+                console.log('Refresh cancelled by user action');
+                return;
+            }
+
             console.error('Error refreshing data:', error);
             const errorInfo = classifyError(error, 'refreshing dashboard data');
             showErrorNotification(errorInfo);
