@@ -95,17 +95,3 @@ if __name__ == "__main__":
     decrypted = handler.decrypt_and_verify(encrypted)
     print(f"Decrypted: {decrypted}")
 
-    # Usage example
-    encryption_key = os.urandom(32)  # 256-bit key
-    hmac_key = os.urandom(32)  # 256-bit key
-    handler = SecureDataHandler(encryption_key, hmac_key)
-
-    # Encrypting data
-    data = {"temperature": 25.5, "humidity": 60, "pressure": 1013.25}
-    encrypted = handler.encrypt_and_sign(data)
-    print(f"Encrypted: {encrypted}")
-
-    # Decrypting data
-    decrypted = handler.decrypt_and_verify(encrypted)
-    print(f"Decrypted: {decrypted}")
-
