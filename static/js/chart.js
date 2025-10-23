@@ -3,9 +3,6 @@ const CONSTANTS = {
     // Unit conversions
     EUR_KWH_TO_MWH_MULTIPLIER: 1000,
 
-    // Timezone offset (Netherlands = UTC+2 hours in milliseconds)
-    TIMEZONE_OFFSET_MS: 2 * 60 * 60 * 1000,
-
     // Refresh intervals
     LIVE_DATA_REFRESH_INTERVAL_MS: 10 * 60 * 1000, // 10 minutes
 
@@ -21,6 +18,39 @@ const CONSTANTS = {
     ONE_HOUR_MS: 60 * 60 * 1000,
     ONE_DAY_MS: CONSTANTS.ONE_DAY_MS
 };
+
+/**
+ * Converts a UTC date to Europe/Amsterdam timezone accounting for DST.
+ * Handles both CET (UTC+1, winter) and CEST (UTC+2, summer) automatically.
+ *
+ * @param {Date} utcDate - The UTC date to convert
+ * @returns {Date} Date with Amsterdam timezone offset applied
+ */
+function convertUTCToAmsterdam(utcDate) {
+    // Use Intl.DateTimeFormat to get the date components in Amsterdam timezone
+    const parts = new Intl.DateTimeFormat('en-GB', {
+        timeZone: 'Europe/Amsterdam',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+    }).formatToParts(utcDate);
+
+    const get = type => parts.find(p => p.type === type).value;
+
+    // Build a UTC timestamp from the Amsterdam time components
+    // (this represents what the time would be if those components were in UTC)
+    const amsterdamAsUTC = new Date(`${get('year')}-${get('month')}-${get('day')}T${get('hour')}:${get('minute')}:${get('second')}Z`);
+
+    // The difference between this and the actual UTC time is the timezone offset
+    const offsetMs = amsterdamAsUTC.getTime() - utcDate.getTime();
+
+    // Apply the offset to get the local time
+    return new Date(utcDate.getTime() + offsetMs);
+}
 
 class EnergyDashboard {
     constructor() {
@@ -237,7 +267,7 @@ class EnergyDashboard {
 
         rawData.Prices.forEach(pricePoint => {
             const utcTimestamp = new Date(pricePoint.readingDate);
-            const localTimestamp = new Date(utcTimestamp.getTime() + CONSTANTS.TIMEZONE_OFFSET_MS);
+            const localTimestamp = convertUTCToAmsterdam(utcTimestamp);
 
             // Filter by time range if specified
             if (startDateTime && endDateTime) {
@@ -572,8 +602,14 @@ class EnergyDashboard {
                     if (datetime.includes('+00:18')) {
                         const baseTime = datetime.replace('+00:18', 'Z');
                         const utcDate = new Date(baseTime);
-                        const cestDate = new Date(utcDate.getTime() + CONSTANTS.TIMEZONE_OFFSET_MS);
-                        normalizedDatetime = cestDate.toISOString().replace('Z', '+02:00');
+                        const amsterdamDate = convertUTCToAmsterdam(utcDate);
+
+                        // Calculate the actual timezone offset for this date (CET=+01:00 or CEST=+02:00)
+                        const offsetMs = amsterdamDate.getTime() - utcDate.getTime();
+                        const offsetHours = offsetMs / (60 * 60 * 1000);
+                        const offsetString = `+${String(offsetHours).padStart(2, '0')}:00`;
+
+                        normalizedDatetime = amsterdamDate.toISOString().replace('Z', offsetString);
                     }
 
                     let noisyPrice = price * multiplier;
