@@ -1,9 +1,33 @@
+// Constants
+const CONSTANTS = {
+    // Unit conversions
+    EUR_KWH_TO_MWH_MULTIPLIER: 1000,
+
+    // Timezone offset (Netherlands = UTC+2 hours in milliseconds)
+    TIMEZONE_OFFSET_MS: 2 * 60 * 60 * 1000,
+
+    // Refresh intervals
+    LIVE_DATA_REFRESH_INTERVAL_MS: 10 * 60 * 1000, // 10 minutes
+
+    // Data noise for educational purposes
+    NOISE_PERCENTAGE: 0.1, // ±10%
+
+    // Default settings
+    DEFAULT_PRICE_THRESHOLD: 0,
+    MAX_HISTORICAL_DAYS: 30,
+    DEFAULT_CHEAP_PRICE_THRESHOLD: 50, // EUR/MWh
+
+    // Time periods in milliseconds
+    ONE_HOUR_MS: 60 * 60 * 1000,
+    ONE_DAY_MS: CONSTANTS.ONE_DAY_MS
+};
+
 class EnergyDashboard {
     constructor() {
         this.energyData = null;
         this.energyZeroData = null;
         this.currentTimeRange = 'all';
-        this.priceThreshold = 0;
+        this.priceThreshold = CONSTANTS.DEFAULT_PRICE_THRESHOLD;
         this.liveDataEnabled = true;
         this.refreshInterval = null;
         this.chartInitialized = false; // Track if chart has been rendered
@@ -12,7 +36,7 @@ class EnergyDashboard {
         this.startDateTime = null;
         this.endDateTime = null;
         this.customTimeRange = false;
-        this.maxHistoricalDays = 30;
+        this.maxHistoricalDays = CONSTANTS.MAX_HISTORICAL_DAYS;
 
         this.init();
     }
@@ -98,7 +122,7 @@ class EnergyDashboard {
             // Format dates properly for Energy Zero API - needs ISO format with timezone
             console.log(`Loading Energy Zero historical data from ${this.startDateTime.toDateString()} to ${this.endDateTime.toDateString()}`);
             
-            const daysDiff = Math.ceil((this.endDateTime - this.startDateTime) / (24 * 60 * 60 * 1000));
+            const daysDiff = Math.ceil((this.endDateTime - this.startDateTime) / CONSTANTS.ONE_DAY_MS);
             
             if (daysDiff <= 1) {
                 // Single day request
@@ -213,7 +237,7 @@ class EnergyDashboard {
 
         rawData.Prices.forEach(pricePoint => {
             const utcTimestamp = new Date(pricePoint.readingDate);
-            const localTimestamp = new Date(utcTimestamp.getTime() + (2 * 60 * 60 * 1000));
+            const localTimestamp = new Date(utcTimestamp.getTime() + CONSTANTS.TIMEZONE_OFFSET_MS);
 
             // Filter by time range if specified
             if (startDateTime && endDateTime) {
@@ -222,7 +246,7 @@ class EnergyDashboard {
                 }
             }
 
-            const priceEurMwh = pricePoint.price * 1000; // Convert EUR/kWh to EUR/MWh
+            const priceEurMwh = pricePoint.price * CONSTANTS.EUR_KWH_TO_MWH_MULTIPLIER;
 
             const hourData = {
                 timestamp: localTimestamp.toISOString(),
@@ -266,7 +290,7 @@ class EnergyDashboard {
             await this.loadEnergyZeroData();
             this.updateLiveDataInfo();
             this.updateChart();
-        }, 10 * 60 * 1000);
+        }, CONSTANTS.LIVE_DATA_REFRESH_INTERVAL_MS);
     }
 
     setupDateTimeControls() {
@@ -277,8 +301,8 @@ class EnergyDashboard {
             controlsContainer.className = 'datetime-controls';
             
             const now = new Date();
-            const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-            const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+            const yesterday = new Date(now.getTime() - CONSTANTS.ONE_DAY_MS);
+            const tomorrow = new Date(now.getTime() + CONSTANTS.ONE_DAY_MS);
             
             controlsContainer.innerHTML = `
                 <div class="time-range-section">
@@ -359,15 +383,15 @@ class EnergyDashboard {
         // Calculate start time
         switch (startPeriod) {
             case 'yesterday':
-                startTime = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+                startTime = new Date(now.getTime() - CONSTANTS.ONE_DAY_MS);
                 startTime.setHours(0, 0, 0, 0);
                 break;
             case '2days':
-                startTime = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000);
+                startTime = new Date(now.getTime() - 2 * CONSTANTS.ONE_DAY_MS);
                 startTime.setHours(0, 0, 0, 0);
                 break;
             case 'week':
-                startTime = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                startTime = new Date(now.getTime() - 7 * CONSTANTS.ONE_DAY_MS);
                 startTime.setHours(0, 0, 0, 0);
                 break;
             case 'now':
@@ -382,15 +406,15 @@ class EnergyDashboard {
                 endTime = now;
                 break;
             case 'tomorrow':
-                endTime = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+                endTime = new Date(now.getTime() + CONSTANTS.ONE_DAY_MS);
                 endTime.setHours(23, 59, 59, 999);
                 break;
             case '2days':
-                endTime = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000);
+                endTime = new Date(now.getTime() + 2 * CONSTANTS.ONE_DAY_MS);
                 endTime.setHours(23, 59, 59, 999);
                 break;
             case 'week':
-                endTime = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+                endTime = new Date(now.getTime() + 7 * CONSTANTS.ONE_DAY_MS);
                 endTime.setHours(23, 59, 59, 999);
                 break;
         }
@@ -548,13 +572,13 @@ class EnergyDashboard {
                     if (datetime.includes('+00:18')) {
                         const baseTime = datetime.replace('+00:18', 'Z');
                         const utcDate = new Date(baseTime);
-                        const cestDate = new Date(utcDate.getTime() + (2 * 60 * 60 * 1000));
+                        const cestDate = new Date(utcDate.getTime() + CONSTANTS.TIMEZONE_OFFSET_MS);
                         normalizedDatetime = cestDate.toISOString().replace('Z', '+02:00');
                     }
 
                     let noisyPrice = price * multiplier;
                     if (noisyPrice !== 0) {
-                        const noisePercent = (Math.random() - 0.5) * 0.1;
+                        const noisePercent = (Math.random() - 0.5) * CONSTANTS.NOISE_PERCENTAGE;
                         noisyPrice = noisyPrice * (1 + noisePercent);
                     }                    
                     
@@ -654,10 +678,10 @@ class EnergyDashboard {
         }
         
         const cutoffs = {
-            '24h': new Date(now.getTime() + 24 * 60 * 60 * 1000),
+            '24h': new Date(now.getTime() + CONSTANTS.ONE_DAY_MS),
             '48h': new Date(now.getTime() + 48 * 60 * 60 * 1000),
-            '7d': new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000),
-            'all': new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000)
+            '7d': new Date(now.getTime() + 7 * CONSTANTS.ONE_DAY_MS),
+            'all': new Date(now.getTime() + 365 * CONSTANTS.ONE_DAY_MS)
         };
         return now;
     }
@@ -777,11 +801,10 @@ class EnergyDashboard {
             `Last updated: ${new Date(lastUpdate).toLocaleString()}`;
         
         // Update cheap hours with a reasonable threshold
-        const reasonableThreshold = 50; // Default 50 EUR/MWh threshold
-        const cheapHours = allDataPoints.filter(item => item.price > 0 && item.price < reasonableThreshold);
-        
-        document.getElementById('cheapHours').innerHTML = 
-            `${cheapHours.length} hours below €${reasonableThreshold}<br>` +
+        const cheapHours = allDataPoints.filter(item => item.price > 0 && item.price < CONSTANTS.DEFAULT_CHEAP_PRICE_THRESHOLD);
+
+        document.getElementById('cheapHours').innerHTML =
+            `${cheapHours.length} hours below €${CONSTANTS.DEFAULT_CHEAP_PRICE_THRESHOLD}<br>` +
             `(${((cheapHours.length / allDataPoints.length) * 100).toFixed(1)}% of all data)`;
     }
 
