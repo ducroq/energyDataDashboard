@@ -9,7 +9,16 @@
     </header>
 
     <div class="chart-container">
-        <div id="energyChart"></div>
+        <div id="energyChart">
+            <!-- Progressive enhancement: show loading state before JS loads -->
+            <div class="chart-loading-fallback">
+                <div class="loading-spinner"></div>
+                <p>Loading energy price data...</p>
+                <noscript>
+                    <p style="color: #ef4444;">JavaScript is required to view this dashboard. Please enable JavaScript in your browser.</p>
+                </noscript>
+            </div>
+        </div>
     </div>
 
     <div class="data-info">        

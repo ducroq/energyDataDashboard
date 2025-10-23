@@ -88,12 +88,19 @@ export function renderChart(elementId, traces, chartInitialized) {
     const layout = getChartLayout();
     const config = getChartConfig();
 
+    const element = document.getElementById(elementId);
+
     // Use Plotly.react() for efficient updates after initial render
     if (chartInitialized) {
         Plotly.react(elementId, traces, layout, config);
     } else {
         Plotly.newPlot(elementId, traces, layout, config);
         chartInitialized = true;
+
+        // Mark chart container as initialized (for progressive enhancement)
+        if (element && element.parentElement) {
+            element.parentElement.classList.add('chart-initialized');
+        }
     }
 
     return chartInitialized;

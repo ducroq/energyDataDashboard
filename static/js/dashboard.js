@@ -10,6 +10,7 @@ import { ApiClient } from './modules/api-client.js';
 import { processEnergyDataForChart } from './modules/data-processor.js';
 import { renderChart } from './modules/chart-renderer.js';
 import { UIController } from './modules/ui-controller.js';
+import { initWebVitals } from './modules/web-vitals.js';
 
 /**
  * Main Energy Dashboard class
@@ -347,6 +348,9 @@ class EnergyDashboard {
 
 // Initialize dashboard when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
+    // Initialize Web Vitals monitoring
+    initWebVitals();
+
     window.energyDashboard = new EnergyDashboard();
 });
 

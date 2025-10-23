@@ -38,6 +38,26 @@
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"  # 1 year
 
+# Enable compression for text-based assets
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+
+# Suggest compression for JSON, CSS, JS (modern browsers handle this automatically)
+[build.processing]
+  skip_processing = false
+[build.processing.css]
+  bundle = true
+  minify = true
+[build.processing.js]
+  bundle = false  # We're using ES6 modules
+  minify = true
+[build.processing.html]
+  pretty_urls = true
+[build.processing.images]
+  compress = true
+
 [[headers]]
   for = "/fonts/*"
   [headers.values]
