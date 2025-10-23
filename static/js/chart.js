@@ -76,6 +76,26 @@ const DATA_SOURCES = {
 };
 
 /**
+ * Debounce utility - delays function execution until after specified wait time
+ * has elapsed since the last invocation. Prevents excessive function calls.
+ *
+ * @param {Function} func - The function to debounce
+ * @param {number} wait - The delay in milliseconds
+ * @returns {Function} Debounced function
+ */
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+/**
  * Converts a UTC date to Europe/Amsterdam timezone accounting for DST.
  * Handles both CET (UTC+1, winter) and CEST (UTC+2, summer) automatically.
  *
@@ -127,6 +147,13 @@ class EnergyDashboard {
         // API response cache (URL -> {data, timestamp})
         this.apiCache = new Map();
         this.cacheExpiryMs = 5 * 60 * 1000; // 5 minutes cache TTL
+
+        // Debounced refresh function (500ms delay)
+        // Prevents excessive API calls when users rapidly change settings
+        this.debouncedRefresh = debounce(
+            () => this.refreshDataAndChart(),
+            500  // 500ms delay
+        );
 
         this.init();
     }
@@ -568,19 +595,19 @@ class EnergyDashboard {
         
         const description = this.getRangeDescription(startPeriod, endPeriod);
         this.updateRangeInfo(description);
-        this.refreshDataAndChart();
+        this.debouncedRefresh();  // Use debounced version to prevent rapid-fire API calls
     }
 
     resetToDefault() {
         document.getElementById('start-period').value = 'now';
         document.getElementById('end-period').value = 'tomorrow';
-        
+
         this.startDateTime = null;
         this.endDateTime = null;
         this.customTimeRange = false;
-        
+
         this.updateRangeInfo('Now to Tomorrow (Default)');
-        this.refreshDataAndChart();
+        this.debouncedRefresh();  // Use debounced version to prevent rapid-fire API calls
     }
 
     updateRangePreview() {
