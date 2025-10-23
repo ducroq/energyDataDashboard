@@ -76,6 +76,106 @@ const DATA_SOURCES = {
 };
 
 /**
+ * Classify and format errors with user-friendly messages
+ *
+ * @param {Error} error - The error to classify
+ * @param {string} context - Context where error occurred (e.g., 'loading data')
+ * @returns {Object} Error classification with user message
+ */
+function classifyError(error, context = 'operation') {
+    const errorInfo = {
+        type: 'unknown',
+        userMessage: '',
+        technicalMessage: error.message || 'Unknown error',
+        shouldRetry: false,
+        severity: 'error'
+    };
+
+    // Network errors
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        errorInfo.type = 'network';
+        errorInfo.userMessage = `Network connection failed while ${context}. Please check your internet connection.`;
+        errorInfo.shouldRetry = true;
+        errorInfo.severity = 'warning';
+    }
+    // HTTP errors
+    else if (error.message && error.message.includes('HTTP')) {
+        const statusMatch = error.message.match(/HTTP (\d+)/);
+        const status = statusMatch ? parseInt(statusMatch[1]) : 0;
+
+        errorInfo.type = 'http';
+        if (status === 404) {
+            errorInfo.userMessage = `Data not found while ${context}. The requested resource may not exist.`;
+            errorInfo.shouldRetry = false;
+        } else if (status === 429) {
+            errorInfo.userMessage = `Too many requests while ${context}. Please wait a moment and try again.`;
+            errorInfo.shouldRetry = true;
+            errorInfo.severity = 'warning';
+        } else if (status >= 500) {
+            errorInfo.userMessage = `Server error while ${context}. The service may be temporarily unavailable.`;
+            errorInfo.shouldRetry = true;
+        } else {
+            errorInfo.userMessage = `Request failed while ${context} (HTTP ${status}).`;
+            errorInfo.shouldRetry = false;
+        }
+    }
+    // JSON parsing errors
+    else if (error instanceof SyntaxError || error.message.includes('JSON')) {
+        errorInfo.type = 'parsing';
+        errorInfo.userMessage = `Data format error while ${context}. The server returned invalid data.`;
+        errorInfo.shouldRetry = false;
+    }
+    // Timeout errors
+    else if (error.name === 'AbortError' || error.message.includes('timeout')) {
+        errorInfo.type = 'timeout';
+        errorInfo.userMessage = `Request timed out while ${context}. The server took too long to respond.`;
+        errorInfo.shouldRetry = true;
+        errorInfo.severity = 'warning';
+    }
+    // Generic errors
+    else {
+        errorInfo.userMessage = `An error occurred while ${context}. Please try again later.`;
+        errorInfo.shouldRetry = true;
+        errorInfo.severity = 'warning';
+    }
+
+    return errorInfo;
+}
+
+/**
+ * Display user-friendly error notification
+ *
+ * @param {Object} errorInfo - Error classification from classifyError()
+ */
+function showErrorNotification(errorInfo) {
+    const existingNotification = document.getElementById('error-notification');
+    if (existingNotification) {
+        existingNotification.remove();
+    }
+
+    const notification = document.createElement('div');
+    notification.id = 'error-notification';
+    notification.className = `error-notification ${errorInfo.severity}`;
+    notification.innerHTML = `
+        <div class="error-icon">${errorInfo.severity === 'error' ? '❌' : '⚠️'}</div>
+        <div class="error-content">
+            <div class="error-message">${errorInfo.userMessage}</div>
+            <div class="error-technical">Technical: ${errorInfo.technicalMessage}</div>
+        </div>
+        <button class="error-close" onclick="this.parentElement.remove()">×</button>
+    `;
+
+    document.body.appendChild(notification);
+
+    // Auto-remove after 10 seconds
+    setTimeout(() => {
+        if (notification.parentElement) {
+            notification.remove();
+        }
+    }, 10000);
+}
+
+/**
  * Debounce utility - delays function execution until after specified wait time
  * has elapsed since the last invocation. Prevents excessive function calls.
  *
@@ -222,10 +322,17 @@ class EnergyDashboard {
         try {
             const timestamp = new Date().getTime();
             const response = await fetch(`/data/energy_price_forecast.json?t=${timestamp}`);
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
             this.energyData = await response.json();
             console.log('Loaded fresh energy data:', this.energyData);
         } catch (error) {
             console.error('Error loading energy data:', error);
+            const errorInfo = classifyError(error, 'loading energy price forecast');
+            showErrorNotification(errorInfo);
             this.energyData = [];
         }
     }
@@ -273,10 +380,17 @@ class EnergyDashboard {
             
             // If we reach here, all attempts failed
             console.error('❌ All Energy Zero attempts failed');
+            const error = new Error('Unable to load Energy Zero data for today or yesterday');
+            const errorInfo = classifyError(error, 'loading live Energy Zero prices');
+            errorInfo.userMessage = 'Live Energy Zero data is currently unavailable. Historical forecasts are still shown.';
+            errorInfo.severity = 'warning';
+            showErrorNotification(errorInfo);
             this.energyZeroData = null;
-            
+
         } catch (error) {
             console.error('❌ Error loading Energy Zero data:', error);
+            const errorInfo = classifyError(error, 'loading live Energy Zero prices');
+            showErrorNotification(errorInfo);
             this.energyZeroData = null;
         }
     }
@@ -644,12 +758,16 @@ class EnergyDashboard {
             } else {
                 await this.loadEnergyZeroData();
             }
-            
+
             this.updateChart();
             this.updateInfo();
             this.updateLiveDataInfo();
         } catch (error) {
             console.error('Error refreshing data:', error);
+            const errorInfo = classifyError(error, 'refreshing dashboard data');
+            showErrorNotification(errorInfo);
+            // Chart will still update with whatever data is available
+            this.updateChart();
         } finally {
             this.hideLoadingIndicator();
         }
