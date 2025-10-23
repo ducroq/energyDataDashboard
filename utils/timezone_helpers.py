@@ -1,9 +1,9 @@
 from datetime import datetime, tzinfo
-import pytz
 from zoneinfo import ZoneInfo
 
 # Ensure start and end times are in the specified timezone
 def ensure_timezone(start_time: datetime, end_time: datetime) -> tuple[datetime, datetime, ZoneInfo]:
+    import pytz
     tz = start_time.tzinfo
 
     if not isinstance(tz, pytz.BaseTzInfo):
@@ -40,15 +40,16 @@ def get_timezone_and_country(lat, lng):
     return ZoneInfo(timezone_str), country_code
 
 def compare_timezones(current_time: datetime, lat: float, lon: float) -> tuple[bool, str]:
+    import pytz
     coord_tz = get_timezone(lat, lon)
     if coord_tz is None:
         return False, "Could not determine timezone from coordinates"
     time_tz = current_time.tzinfo
-    
+
     # Compare the timezones
     if time_tz is None:
         return False, "Current time is naive (no timezone info)"
-    
+
     # Convert both to ZoneInfo objects for comparison
     if isinstance(time_tz, pytz.tzinfo.BaseTzInfo):
         time_tz = ZoneInfo(time_tz.zone)
