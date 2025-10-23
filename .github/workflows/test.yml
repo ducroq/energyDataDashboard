@@ -1,0 +1,116 @@
+name: Test and Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-python:
+    name: Test Python utilities
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install cryptography
+
+    - name: Test Python module imports
+      run: |
+        python -c "from utils.secure_data_handler import SecureDataHandler; print('✓ SecureDataHandler import OK')"
+        python -c "from utils.helpers import load_config; print('✓ helpers import OK')"
+        python -c "from utils.data_types import EnhancedDataSet, CombinedDataSet; print('✓ data_types import OK')"
+        python -c "from utils.timezone_helpers import get_timezone; print('✓ timezone_helpers import OK')"
+        python -c "from decrypt_data import fetch_with_retry, validate_base64_key; print('✓ decrypt_data import OK')"
+
+    - name: Test Python syntax
+      run: |
+        python -m py_compile decrypt_data.py
+        python -m py_compile utils/*.py
+
+    - name: Test validation function
+      run: |
+        python -c "
+        from decrypt_data import validate_base64_key
+        import base64
+
+        # Test valid key
+        valid_key = base64.b64encode(b'a' * 32).decode()
+        result = validate_base64_key(valid_key, 'TEST_KEY')
+        assert len(result) == 32, 'Valid key should return 32 bytes'
+
+        # Test invalid base64
+        try:
+            validate_base64_key('not-valid!!!', 'TEST')
+            assert False, 'Should reject invalid base64'
+        except ValueError:
+            pass
+
+        # Test wrong length
+        try:
+            wrong_len = base64.b64encode(b'a' * 16).decode()
+            validate_base64_key(wrong_len, 'TEST')
+            assert False, 'Should reject wrong length'
+        except ValueError:
+            pass
+
+        print('✓ All validation tests passed')
+        "
+
+    - name: Test retry logic
+      run: |
+        python -c "
+        from decrypt_data import fetch_with_retry
+
+        # Test successful fetch
+        data = fetch_with_retry('https://www.google.com', max_retries=2, initial_delay=1)
+        assert len(data) > 0, 'Should fetch data from Google'
+        print(f'✓ Retry logic test passed (fetched {len(data)} bytes)')
+        "
+
+  build-hugo:
+    name: Build Hugo site
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Setup Hugo
+      uses: peaceiris/actions-hugo@v2
+      with:
+        hugo-version: '0.124.0'
+        extended: false
+
+    - name: Build Hugo site
+      run: hugo --minify
+
+    - name: Check build output
+      run: |
+        test -d public || (echo "public directory not created" && exit 1)
+        test -f public/index.html || (echo "index.html not generated" && exit 1)
+        test -f public/js/chart.js || (echo "chart.js not copied" && exit 1)
+        test -f public/css/style.css || (echo "style.css not copied" && exit 1)
+        echo "✓ Hugo build successful - all expected files present"
+
+    - name: Verify JavaScript syntax
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+    - run: |
+        npx eslint public/js/chart.js --no-eslintrc --parser-options=ecmaVersion:2022 || echo "⚠ ESLint warnings (non-blocking)"
+
+  all-tests-passed:
+    name: All Tests Passed
+    needs: [test-python, build-hugo]
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "✓ All tests passed successfully!"

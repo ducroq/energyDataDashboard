@@ -64,23 +64,59 @@ def fetch_with_retry(url, max_retries=3, initial_delay=1):
     # All retries failed
     raise Exception(f"Failed to fetch {url} after {max_retries} attempts. Last error: {last_error}")
 
+def validate_base64_key(key_b64, key_name, expected_length=32):
+    """
+    Validate that a base64-encoded key is properly formatted and has correct length.
+
+    Args:
+        key_b64 (str): Base64-encoded key
+        key_name (str): Name of the key (for error messages)
+        expected_length (int): Expected length in bytes after decoding (default: 32 for 256-bit)
+
+    Returns:
+        bytes: Decoded key
+
+    Raises:
+        ValueError: If validation fails
+    """
+    if not key_b64:
+        raise ValueError(f"{key_name} is not set")
+
+    # Check if it looks like base64
+    if not key_b64.replace('=', '').replace('+', '').replace('/', '').isalnum():
+        raise ValueError(f"{key_name} does not appear to be valid base64 (contains invalid characters)")
+
+    try:
+        decoded_key = base64.b64decode(key_b64)
+    except Exception as e:
+        raise ValueError(f"{key_name} is not valid base64: {e}")
+
+    if len(decoded_key) != expected_length:
+        raise ValueError(
+            f"{key_name} has incorrect length: {len(decoded_key)} bytes "
+            f"(expected {expected_length} bytes for {expected_length * 8}-bit key)"
+        )
+
+    return decoded_key
+
 def fetch_and_decrypt_energy_data():
     """Fetch and decrypt energy price forecast data."""
     try:
         # Get base64-encoded keys from environment variables
         encryption_key_b64 = os.environ.get('ENCRYPTION_KEY_B64')
         hmac_key_b64 = os.environ.get('HMAC_KEY_B64')
-        
-        if not encryption_key_b64 or not hmac_key_b64:
-            print("ERROR: ENCRYPTION_KEY_B64 and HMAC_KEY_B64 environment variables must be set")
+
+        print("Validating environment variables...")
+
+        # Validate and decode the keys
+        try:
+            encryption_key = validate_base64_key(encryption_key_b64, 'ENCRYPTION_KEY_B64', expected_length=32)
+            hmac_key = validate_base64_key(hmac_key_b64, 'HMAC_KEY_B64', expected_length=32)
+            print(f"SUCCESS: Encryption key validated: {len(encryption_key)} bytes (256-bit)")
+            print(f"SUCCESS: HMAC key validated: {len(hmac_key)} bytes (256-bit)")
+        except ValueError as e:
+            print(f"ERROR: Environment variable validation failed: {e}")
             return False
-        
-        # Decode the base64 keys (same as your code)
-        encryption_key = base64.b64decode(encryption_key_b64)
-        hmac_key = base64.b64decode(hmac_key_b64)
-        
-        print(f"Decoded encryption key length: {len(encryption_key)} bytes")
-        print(f"Decoded HMAC key length: {len(hmac_key)} bytes")
         
         # Initialize your SecureDataHandler with the decoded keys
         handler = SecureDataHandler(encryption_key, hmac_key)
