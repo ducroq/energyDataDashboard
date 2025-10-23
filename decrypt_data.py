@@ -8,6 +8,7 @@ import os
 import json
 import base64
 import urllib.request
+import time
 from datetime import datetime
 from utils.secure_data_handler import SecureDataHandler
 
@@ -16,6 +17,52 @@ def json_serializer(obj):
     if isinstance(obj, datetime):
         return obj.isoformat()
     raise TypeError(f"Type {type(obj)} not serializable")
+
+def fetch_with_retry(url, max_retries=3, initial_delay=1):
+    """
+    Fetch URL with exponential backoff retry logic.
+
+    Args:
+        url (str): URL to fetch
+        max_retries (int): Maximum number of retry attempts
+        initial_delay (int): Initial delay in seconds (doubles with each retry)
+
+    Returns:
+        str: Response data
+
+    Raises:
+        Exception: If all retry attempts fail
+    """
+    delay = initial_delay
+    last_error = None
+
+    for attempt in range(max_retries):
+        try:
+            print(f"Attempt {attempt + 1}/{max_retries}: Fetching {url}")
+            with urllib.request.urlopen(url, timeout=30) as response:
+                data = response.read().decode()
+                print(f"✓ Successfully fetched data ({len(data)} characters)")
+                return data
+        except urllib.error.HTTPError as e:
+            last_error = e
+            print(f"✗ HTTP Error {e.code}: {e.reason}")
+            if e.code in [404, 403, 401]:  # Don't retry on client errors
+                raise
+        except urllib.error.URLError as e:
+            last_error = e
+            print(f"✗ Network Error: {e.reason}")
+        except Exception as e:
+            last_error = e
+            print(f"✗ Error: {e}")
+
+        # If not the last attempt, wait before retrying
+        if attempt < max_retries - 1:
+            print(f"⏳ Waiting {delay}s before retry...")
+            time.sleep(delay)
+            delay *= 2  # Exponential backoff
+
+    # All retries failed
+    raise Exception(f"Failed to fetch {url} after {max_retries} attempts. Last error: {last_error}")
 
 def fetch_and_decrypt_energy_data():
     """Fetch and decrypt energy price forecast data."""
@@ -38,14 +85,11 @@ def fetch_and_decrypt_energy_data():
         # Initialize your SecureDataHandler with the decoded keys
         handler = SecureDataHandler(encryption_key, hmac_key)
         
-        # Fetch encrypted data from your GitHub Pages endpoint
+        # Fetch encrypted data from GitHub Pages endpoint with retry logic
         url = 'https://ducroq.github.io/energydatahub/energy_price_forecast.json'
         print(f"Fetching energy data from {url}")
-        
-        with urllib.request.urlopen(url) as response:
-            encrypted_data = response.read().decode()
-        
-        print(f"Fetched encrypted data length: {len(encrypted_data)} characters")
+
+        encrypted_data = fetch_with_retry(url, max_retries=3, initial_delay=2)
         
         # Decrypt using your handler (same method as your example)
         print("Decrypting data...")
