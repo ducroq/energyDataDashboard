@@ -119,7 +119,7 @@ class EnergyDashboard {
                 }
                 
                 const data = await response.json();
-                this.energyZeroData = this.processEnergyZeroHistoricalData(data);
+                this.energyZeroData = this.processEnergyZeroData(data, { isHistorical: true });
             } else {
                 // Multiple day requests
                 const allPrices = [];
@@ -153,7 +153,7 @@ class EnergyDashboard {
                     currentDate.setDate(currentDate.getDate() + 1);
                 }
                 
-                this.energyZeroData = this.processEnergyZeroHistoricalData({ Prices: allPrices });
+                this.energyZeroData = this.processEnergyZeroData({ Prices: allPrices }, { isHistorical: true });
             }
             
             console.log('✅ Loaded Energy Zero historical data:', this.energyZeroData);
@@ -164,13 +164,20 @@ class EnergyDashboard {
         }
     }
 
-    processEnergyZeroData(rawData) {
+    processEnergyZeroData(rawData, options = {}) {
         if (!rawData || !rawData.Prices) {
             return null;
         }
 
+        const {
+            isHistorical = false,
+            startDateTime = this.startDateTime,
+            endDateTime = this.endDateTime,
+            detectCurrentPrice = !this.customTimeRange
+        } = options;
+
         const currentTime = new Date();
-        const currentHour = new Date(currentTime.getFullYear(), currentTime.getMonth(), 
+        const currentHour = new Date(currentTime.getFullYear(), currentTime.getMonth(),
                                    currentTime.getDate(), currentTime.getHours());
 
         const processedData = {
@@ -180,15 +187,28 @@ class EnergyDashboard {
             last_updated: new Date().toISOString()
         };
 
+        // Add time_range if historical
+        if (isHistorical && startDateTime && endDateTime) {
+            processedData.time_range = {
+                start: startDateTime.toISOString(),
+                end: endDateTime.toISOString()
+            };
+        }
+
         rawData.Prices.forEach(pricePoint => {
-            // const timestamp = new Date(pricePoint.readingDate);
             const utcTimestamp = new Date(pricePoint.readingDate);
             const localTimestamp = new Date(utcTimestamp.getTime() + (2 * 60 * 60 * 1000));
-            const priceEurMwh = pricePoint.price * 1000;
-            
+
+            // Filter by time range if specified
+            if (startDateTime && endDateTime) {
+                if (localTimestamp < startDateTime || localTimestamp > endDateTime) {
+                    return; // Skip this price point
+                }
+            }
+
+            const priceEurMwh = pricePoint.price * 1000; // Convert EUR/kWh to EUR/MWh
+
             const hourData = {
-                // timestamp: timestamp.toISOString(),
-                // hour: timestamp.getHours(),
                 timestamp: localTimestamp.toISOString(),
                 hour: localTimestamp.getHours(),
                 price_eur_kwh: pricePoint.price,
@@ -196,14 +216,21 @@ class EnergyDashboard {
                 reading_date: pricePoint.readingDate
             };
 
+            // Add optional fields for historical data
+            if (isHistorical) {
+                hourData.date = localTimestamp.toISOString().split('T')[0];
+                hourData.utc_timestamp = utcTimestamp.toISOString();
+            }
+
             processedData.today_prices.push(hourData);
 
-            // if (timestamp.getTime() === currentHour.getTime()) {
-            if (localTimestamp.getTime() === currentHour.getTime()) {
+            // Detect current price if enabled
+            if (detectCurrentPrice && localTimestamp.getTime() === currentHour.getTime()) {
                 processedData.current_price = hourData;
             }
         });
 
+        // Calculate statistics
         if (processedData.today_prices.length > 0) {
             const prices = processedData.today_prices.map(p => p.price_eur_mwh);
             processedData.statistics = {
@@ -212,72 +239,6 @@ class EnergyDashboard {
                 avg: prices.reduce((a, b) => a + b, 0) / prices.length,
                 count: prices.length
             };
-        }
-
-        return processedData;
-    }
-
-    processEnergyZeroHistoricalData(rawData) {
-        if (!rawData || !rawData.Prices) {
-            return null;
-        }
-
-        const processedData = {
-            current_price: null,
-            today_prices: [],
-            statistics: {},
-            last_updated: new Date().toISOString(),
-            time_range: {
-                start: this.startDateTime?.toISOString(),
-                end: this.endDateTime?.toISOString()
-            }
-        };
-
-        rawData.Prices.forEach(pricePoint => {
-            // Energy Zero API returns UTC timestamps (ending in Z)
-            // Convert to local Netherlands time for consistency
-            const utcTimestamp = new Date(pricePoint.readingDate);
-            const localTimestamp = new Date(utcTimestamp.getTime());
-            
-            // Filter by selected time range (using local time)
-            if (this.startDateTime && this.endDateTime) {
-                if (localTimestamp < this.startDateTime || localTimestamp > this.endDateTime) {
-                    return; // Skip this price point
-                }
-            }
-            
-            const priceEurMwh = pricePoint.price * 1000; // Convert EUR/kWh to EUR/MWh
-            
-            const hourData = {
-                timestamp: localTimestamp.toISOString(),
-                hour: localTimestamp.getHours(),
-                date: localTimestamp.toISOString().split('T')[0],
-                price_eur_kwh: pricePoint.price,
-                price_eur_mwh: priceEurMwh,
-                reading_date: pricePoint.readingDate,
-                utc_timestamp: utcTimestamp.toISOString() // Keep original for debugging
-            };
-
-            processedData.today_prices.push(hourData);
-        });
-
-        if (processedData.today_prices.length > 0) {
-            const prices = processedData.today_prices.map(p => p.price_eur_mwh);
-            processedData.statistics = {
-                min: Math.min(...prices),
-                max: Math.max(...prices),
-                avg: prices.reduce((a, b) => a + b, 0) / prices.length,
-                count: prices.length
-            };
-            
-            if (!this.customTimeRange) {
-                const currentHour = new Date();
-                currentHour.setMinutes(0, 0, 0);
-                
-                processedData.current_price = processedData.today_prices.find(p => 
-                    new Date(p.timestamp).getTime() === currentHour.getTime()
-                );
-            }
         }
 
         return processedData;
