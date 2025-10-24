@@ -128,15 +128,17 @@ export function processEnergyDataForChart(energyData, energyZeroData, cutoffTime
             const dataPoints = Object.entries(sourceData).map(([datetime, price]) => {
                 let normalizedDatetime = datetime;
 
-                if (datetime.includes('+00:18')) {
-                    const baseTime = datetime.replace('+00:18', 'Z');
+                // Handle incorrect timezone offsets from various APIs
+                // Some APIs return +00:18 or +00:09 instead of proper timezone
+                if (datetime.includes('+00:18') || datetime.includes('+00:09')) {
+                    const baseTime = datetime.replace(/\+00:(18|09)/, 'Z');
                     const utcDate = new Date(baseTime);
                     const amsterdamDate = convertUTCToAmsterdam(utcDate);
 
                     // Calculate the actual timezone offset for this date (CET=+01:00 or CEST=+02:00)
                     const offsetMs = amsterdamDate.getTime() - utcDate.getTime();
                     const offsetHours = offsetMs / (60 * 60 * 1000);
-                    const offsetString = `+${String(offsetHours).padStart(2, '0')}:00`;
+                    const offsetString = `+${String(Math.floor(offsetHours)).padStart(2, '0')}:00`;
 
                     normalizedDatetime = amsterdamDate.toISOString().replace('Z', offsetString);
                 }
