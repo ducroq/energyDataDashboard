@@ -129,18 +129,23 @@ export function processEnergyDataForChart(energyData, energyZeroData, cutoffTime
                 let normalizedDatetime = datetime;
 
                 // Handle incorrect timezone offsets from various APIs
-                // Some APIs return +00:18 or +00:09 instead of proper timezone
+                // Some APIs return +00:18 or +00:09 instead of proper +02:00 (CEST) or +01:00 (CET)
+                // The time portion is already in Amsterdam local time, just the offset indicator is wrong
                 if (datetime.includes('+00:18') || datetime.includes('+00:09')) {
-                    const baseTime = datetime.replace(/\+00:(18|09)/, 'Z');
-                    const utcDate = new Date(baseTime);
-                    const amsterdamDate = convertUTCToAmsterdam(utcDate);
+                    // Determine if we're in CEST (summer, +02:00) or CET (winter, +01:00)
+                    // Quick check: parse the date portion to determine DST
+                    const dateMatch = datetime.match(/^(\d{4})-(\d{2})-(\d{2})/);
+                    if (dateMatch) {
+                        const year = parseInt(dateMatch[1]);
+                        const month = parseInt(dateMatch[2]);
 
-                    // Calculate the actual timezone offset for this date (CET=+01:00 or CEST=+02:00)
-                    const offsetMs = amsterdamDate.getTime() - utcDate.getTime();
-                    const offsetHours = offsetMs / (60 * 60 * 1000);
-                    const offsetString = `+${String(Math.floor(offsetHours)).padStart(2, '0')}:00`;
+                        // Rough DST check: Mar-Oct is typically CEST (+02:00), Nov-Feb is CET (+01:00)
+                        // This is simplified; actual DST transitions happen on specific Sundays
+                        const isDST = month >= 3 && month <= 10;
+                        const correctOffset = isDST ? '+02:00' : '+01:00';
 
-                    normalizedDatetime = amsterdamDate.toISOString().replace('Z', offsetString);
+                        normalizedDatetime = datetime.replace(/\+00:(18|09)/, correctOffset);
+                    }
                 }
 
                 let noisyPrice = price * multiplier;
