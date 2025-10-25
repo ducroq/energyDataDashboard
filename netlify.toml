@@ -39,16 +39,17 @@
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "geolocation=(), microphone=(), camera=()"
 
-# Cache static assets aggressively (JS, CSS, fonts, images)
+# Cache static assets with validation (JS, CSS, fonts, images)
+# Note: Removed 'immutable' to allow browser revalidation on updates
 [[headers]]
   for = "/js/*"
   [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"  # 1 year
+    Cache-Control = "public, max-age=86400, must-revalidate"  # 1 day with revalidation
 
 [[headers]]
   for = "/css/*"
   [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"  # 1 year
+    Cache-Control = "public, max-age=86400, must-revalidate"  # 1 day with revalidation
 
 [[headers]]
   for = "/fonts/*"
