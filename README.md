@@ -292,11 +292,15 @@ npm run clean        # Remove build artifacts
 ### Testing Build Optimization
 
 ```bash
+# Using npm script (cross-platform)
+npm test
+
+# Or run directly:
 # Windows
-test_optimization.bat
+scripts\test_optimization.bat
 
 # Linux/Mac
-./test_optimization.sh
+bash scripts/test_optimization.sh
 ```
 
 Expected output:
@@ -384,10 +388,12 @@ Error: Environment variable validation failed: ENCRYPTION_KEY_B64 is not set
 
 ### For More Help
 
-- **📚 Optimization Guide**: [OPTIMIZATION_GUIDE.md](OPTIMIZATION_GUIDE.md)
-- **📋 Deployment Checklist**: [DEPLOYMENT_CHECKLIST.md](DEPLOYMENT_CHECKLIST.md)
-- **🔍 Implementation Summary**: [IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md)
-- **🐛 GitHub Issues**: https://github.com/yourusername/energyDataDashboard/issues
+- **📚 Documentation**: [docs/](docs/) - Complete technical documentation
+- **🏗️ Architecture**: [docs/architecture.md](docs/architecture.md) - System design and data flow
+- **🚀 Deployment**: [docs/deployment.md](docs/deployment.md) - Deployment guide
+- **⚡ Optimization**: [docs/optimization.md](docs/optimization.md) - Build caching details
+- **🐛 Issues**: [docs/backend-issues.md](docs/backend-issues.md) - Known backend issues
+- **💬 GitHub Issues**: https://github.com/yourusername/energyDataDashboard/issues
 
 ## 🤝 Contributing
 
@@ -408,6 +414,16 @@ Contributions welcome! Areas for improvement:
 5. Commit: `git commit -m "Add amazing feature"`
 6. Push: `git push origin feature/amazing-feature`
 7. Open Pull Request
+
+## 📚 Documentation
+
+Complete documentation is available in the [docs/](docs/) folder:
+
+- **[Architecture Guide](docs/architecture.md)** - System design, data flow, and security architecture
+- **[Deployment Guide](docs/deployment.md)** - Step-by-step deployment instructions and verification
+- **[Optimization Guide](docs/optimization.md)** - Build caching strategies and performance tuning
+- **[Backend Issues](docs/backend-issues.md)** - Known backend issues and recommended fixes
+- **[Technical Overview](docs/visualizer_documentation.md)** - Detailed technical documentation
 
 ## 📚 Related Projects
 

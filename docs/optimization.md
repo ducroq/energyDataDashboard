@@ -2,173 +2,19 @@
 
 ## Overview
 
-This guide documents the build caching optimization implemented to reduce Netlify build times and API calls.
+This guide documents the build caching optimization implemented to reduce Netlify build times and API calls by 50-70%.
 
-## Problem Addressed
+## Performance Impact
 
-**Before Optimization:**
-- Every Netlify build fetched and decrypted energy data from GitHub Pages
-- Even if data hadn't changed (updates only daily at 16:00 UTC)
-- Wasted build time on unnecessary decryption operations
-- Slower deployments for UI-only changes
+### Before Optimization
+- Every deploy fetched and decrypted data from GitHub Pages
+- Build time: ~55 seconds
+- 10 deploys/day = 10 API calls to GitHub Pages
 
-**After Optimization:**
-- Intelligent caching skips decryption if data is < 24 hours old
-- Hash-based change detection only decrypts when data actually changed
-- 50-70% faster builds for unchanged data
-- Metadata tracking for better debugging
-
----
-
-## Files Modified/Created
-
-### 1. `decrypt_data_cached.py` (New)
-
-**Purpose:** Enhanced decryption script with intelligent caching
-
-**Key Features:**
-```python
-# Skips decryption if cached data is fresh
-if age_hours < 24:
-    logger.info("✓ Using cached data (still fresh)")
-    return True
-
-# Hash-based change detection
-data_hash = calculate_data_hash(encrypted_data)
-if previous_hash == data_hash:
-    logger.info("Remote data unchanged, using existing")
-    return True
-```
-
-**Benefits:**
-- ✅ Reduces unnecessary API calls to GitHub Pages
-- ✅ Faster builds when data hasn't changed
-- ✅ Metadata tracking for debugging
-- ✅ Graceful fallback to cached data on errors
-- ✅ Force refresh flag: `python decrypt_data_cached.py --force`
-
-### 2. `netlify.toml.optimized` (New)
-
-**Purpose:** Optimized Netlify configuration with build caching
-
-**Key Features:**
-```toml
-# Cache plugin configuration
-[[plugins]]
-  package = "netlify-plugin-cache"
-  [plugins.inputs]
-    paths = ["static/data"]
-
-# Optimized build command
-command = """
-  pip install cryptography &&
-  python decrypt_data_cached.py &&
-  hugo --minify
-"""
-```
-
-**Benefits:**
-- ✅ Preserves `static/data/` between builds
-- ✅ Different build strategies per context (production/preview/branch)
-- ✅ Better cache headers for data files
-- ✅ Cleaner build output
-
-### 3. `package.json` (New)
-
-**Purpose:** Manage Netlify plugin dependency
-
-**Scripts:**
-```bash
-npm run build        # Build with cache
-npm run build:force  # Force refresh data
-npm run dev          # Local development
-npm run clean        # Clean build artifacts
-```
-
----
-
-## Migration Steps
-
-### Step 1: Install Dependencies
-
-```bash
-cd C:/local_dev/energyDataDashboard
-
-# Install Netlify plugin
-npm install netlify-plugin-cache --save-dev
-```
-
-### Step 2: Backup Current Configuration
-
-```bash
-# Backup existing netlify.toml
-cp netlify.toml netlify.toml.backup
-```
-
-### Step 3: Replace Configuration
-
-```bash
-# Replace with optimized version
-cp netlify.toml.optimized netlify.toml
-```
-
-### Step 4: Update Netlify Environment
-
-1. Go to Netlify Dashboard → Your Site
-2. Site Settings → Environment Variables
-3. Verify these exist:
-   - `ENCRYPTION_KEY_B64`
-   - `HMAC_KEY_B64`
-
-### Step 5: Test Locally
-
-```bash
-# Test the cached decryption
-python decrypt_data_cached.py
-
-# Should see output like:
-# ✓ Using cached data (still fresh)
-# OR
-# Data has changed (hash: abc123...)
-# ✓ Energy data ready!
-
-# Test Hugo build
-hugo server -D
-```
-
-### Step 6: Deploy to Netlify
-
-```bash
-git add package.json netlify.toml decrypt_data_cached.py OPTIMIZATION_GUIDE.md
-git commit -m "Add build caching optimization
-
-- Implement intelligent data caching (skip if < 24h old)
-- Add hash-based change detection
-- Configure Netlify build cache plugin
-- Reduce build time by 50-70% for unchanged data
-"
-git push origin main
-```
-
-### Step 7: Verify Optimization
-
-1. **Check Netlify Deploy Log:**
-   ```
-   🔧 Installing Python dependencies...
-   📦 Fetching and decrypting energy data (with caching)...
-   Cached data is 2.3 hours old (max: 24.0h)
-   ✓ Using cached data (still fresh)
-   Skipping decryption - using cached data
-   ✓ Energy data ready!
-   🏗️  Building Hugo site...
-   ```
-
-2. **Compare Build Times:**
-   - Before: ~45-60 seconds
-   - After (cache hit): ~20-30 seconds
-   - After (cache miss): ~40-50 seconds
-
----
+### After Optimization
+- Skips decryption if data < 24 hours old
+- Build time: ~25 seconds (cache hit) - **55% faster!**
+- 10 deploys/day = ~1-2 API calls - **80-90% reduction!**
 
 ## How It Works
 
@@ -221,7 +67,43 @@ git push origin main
             └────────────┘
 ```
 
-### Metadata Stored
+### Caching Logic
+
+```python
+# Automatic cache logic:
+if cached_data_age < 24 hours:
+    if remote_hash == cached_hash:
+        ✅ Use cached data (instant!)
+    else:
+        🔄 Fetch & decrypt (data changed)
+else:
+    🔄 Fetch & decrypt (stale cache)
+```
+
+## Implementation
+
+### Files Modified/Created
+
+1. **`decrypt_data_cached.py`** - Enhanced decryption script with intelligent caching
+2. **`netlify.toml`** - Optimized Netlify configuration with cache plugin
+3. **`package.json`** - Netlify plugin dependency management
+
+### Key Features
+
+```python
+# Skip decryption if cached data is fresh
+if age_hours < 24:
+    logger.info("✓ Using cached data (still fresh)")
+    return True
+
+# Hash-based change detection
+data_hash = calculate_data_hash(encrypted_data)
+if previous_hash == data_hash:
+    logger.info("Remote data unchanged, using existing")
+    return True
+```
+
+### Metadata Tracked
 
 ```json
 {
@@ -233,8 +115,6 @@ git push origin main
   "cache_max_age_hours": 24
 }
 ```
-
----
 
 ## Configuration Options
 
@@ -259,8 +139,8 @@ Force fresh data fetch:
 # Command line
 python decrypt_data_cached.py --force
 
-# In netlify.toml (for specific contexts)
-command = "python decrypt_data_cached.py --force && hugo"
+# NPM script
+npm run build:force
 ```
 
 ### Cache Control Headers
@@ -268,7 +148,6 @@ command = "python decrypt_data_cached.py --force && hugo"
 Adjust browser caching in `netlify.toml`:
 
 ```toml
-# Data files cache duration
 [[headers]]
   for = "/data/*"
   [headers.values]
@@ -280,7 +159,27 @@ Adjust browser caching in `netlify.toml`:
 - `3600` (1 hour) - Balanced (recommended)
 - `86400` (24 hours) - Matches backend update
 
----
+## Testing
+
+### Test Script Usage
+
+```bash
+# Windows
+test_optimization.bat
+
+# Linux/Mac
+chmod +x test_optimization.sh
+./test_optimization.sh
+```
+
+Expected output:
+```
+✓ Data file created
+✓ Metadata file created
+✓ Cache hit detected
+✓ Force refresh works
+✓ All tests passed!
+```
 
 ## Monitoring & Debugging
 
@@ -295,8 +194,6 @@ Cached data is 25.3 hours old              # Cache miss (expired)
 ```
 
 ### Metadata Inspection
-
-Check cached metadata:
 
 ```bash
 cat static/data/energy_data_metadata.json
@@ -320,8 +217,6 @@ Bypass cache for troubleshooting:
    python decrypt_data_cached.py --force
    ```
 
----
-
 ## Performance Metrics
 
 ### Build Time Comparison
@@ -338,13 +233,6 @@ Bypass cache for troubleshooting:
 |--------|---------------|---------------|-----------|
 | 10 deploys/day | 10 | ~1-2 | **80-90%** |
 | 100 deploys/month | 100 | ~10-15 | **85-90%** |
-
-**Savings:**
-- Fewer GitHub Pages bandwidth charges
-- Faster feedback loop for UI changes
-- Reduced build queue time
-
----
 
 ## Troubleshooting
 
@@ -382,29 +270,9 @@ Failed to load metadata: ...
 - Metadata file might be invalid JSON
 - Script creates new metadata automatically
 
----
-
-## Rollback Plan
-
-If optimization causes issues:
-
-```bash
-# Restore original configuration
-cp netlify.toml.backup netlify.toml
-
-# Remove cached script (keep original)
-git rm decrypt_data_cached.py
-
-# Deploy
-git commit -m "Rollback to original build process"
-git push
-```
-
----
-
 ## Future Enhancements
 
-### Potential Improvements:
+### Potential Improvements
 
 1. **ETag-based Validation**
    ```python
@@ -431,8 +299,6 @@ git push
    # Pre-fetch before scheduled backend update
    cron: "0 15 * * *"  # 15:00 UTC (1h before backend)
    ```
-
----
 
 ## Summary
 

@@ -1,5 +1,18 @@
+# Python
 *.pyc
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Secrets and environment
 secrets.ini
+config/local/
+.env
+.env.local
+*.key
+*.pem
 
 # Decrypted data files
 static/data/*.json
@@ -7,7 +20,51 @@ data/*.json
 
 # Hugo build files
 public/
+resources/
 
 # Hugo cache
 .hugo_build.lock
 energyDataDashboard_project_knowledge.md
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json.backup
+
+# Backup and temporary files
+*.backup
+!config/backup/*.backup
+*.bak
+*.tmp
+*.swp
+*~
+.DS_Store
+Thumbs.db
+
+# Alternate config files (keep .optimized for reference)
+# *.optimized
+
+# IDE and Editor files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Desktop.ini
+
+# Logs
+*.log
+logs/
+
+# Test output
+coverage/
+.nyc_output/
