@@ -216,8 +216,14 @@ export function processEnergyDataForChart(energyData, energyZeroData, cutoffTime
             const yValues = filteredPrices.map(item => item.price_eur_mwh);
 
             const config = DATA_SOURCES.energyZero;
-            const displayName = customTimeRange ? config.name.historical : config.name.live;
-            const markerSymbol = customTimeRange ? config.marker.symbol.historical : config.marker.symbol.live;
+
+            // Determine if this is truly historical data (looking at past days only)
+            const now = new Date();
+            const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const isHistoricalOnly = startDateTime && startDateTime < todayStart && endDateTime && endDateTime < now;
+
+            const displayName = isHistoricalOnly ? config.name.historical : config.name.live;
+            const markerSymbol = isHistoricalOnly ? config.marker.symbol.historical : config.marker.symbol.live;
 
             traces.push({
                 x: xValues,
