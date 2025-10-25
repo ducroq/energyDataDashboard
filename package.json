@@ -8,7 +8,7 @@
     "build": "python decrypt_data_cached.py && hugo --minify",
     "build:force": "python decrypt_data_cached.py --force && hugo --minify",
     "build:legacy": "python decrypt_data.py && hugo --minify",
-    "clean": "rimraf public resources static/data/*.json",
+    "clean": "rimraf public resources",
     "clean:windows": "if exist public rmdir /s /q public & if exist resources rmdir /s /q resources & del /q static\\data\\*.json 2>nul",
     "test": "bash scripts/test_optimization.sh || scripts\\test_optimization.bat"
   },
