@@ -967,14 +967,17 @@ class EnergyDashboard {
         if (this.customTimeRange && this.startDateTime) {
             return this.startDateTime;
         }
-        
+
+        // For 'all' timeRange, go back far enough to capture yesterday's Energy Zero data
         const cutoffs = {
-            '24h': new Date(now.getTime() + CONSTANTS.ONE_DAY_MS),
-            '48h': new Date(now.getTime() + 48 * 60 * 60 * 1000),
-            '7d': new Date(now.getTime() + 7 * CONSTANTS.ONE_DAY_MS),
-            'all': new Date(now.getTime() + 365 * CONSTANTS.ONE_DAY_MS)
+            '24h': new Date(now.getTime() - CONSTANTS.ONE_DAY_MS),
+            '48h': new Date(now.getTime() - 2 * CONSTANTS.ONE_DAY_MS),
+            '7d': new Date(now.getTime() - 7 * CONSTANTS.ONE_DAY_MS),
+            'all': new Date(now.getTime() - 7 * CONSTANTS.ONE_DAY_MS)  // Show last 7 days
         };
-        return now;
+
+        // Return the appropriate cutoff, default to 'all' if timeRange not recognized
+        return cutoffs[timeRange] || cutoffs['all'];
     }
 
     updateChart() {
