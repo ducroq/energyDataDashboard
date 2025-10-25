@@ -233,17 +233,18 @@ export class ApiClient {
     }
 
     /**
-     * Load current Energy Zero data
+     * Load current Energy Zero data (today + tomorrow if available)
      * @returns {Promise<Object>} Processed Energy Zero data
      */
     async loadEnergyZeroData() {
         try {
             const today = new Date();
-            const yesterday = new Date(today);
-            yesterday.setDate(yesterday.getDate() - 1);
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
 
-            // Try today first (more likely to have current data), then yesterday as fallback
-            const dates = [today, yesterday];
+            // Fetch both today and tomorrow (tomorrow may have day-ahead prices after ~14:00)
+            const dates = [today, tomorrow];
+            const allPrices = [];
 
             for (const date of dates) {
                 const startOfDay = new Date(date);
@@ -256,17 +257,17 @@ export class ApiClient {
 
                 const url = `https://api.energyzero.nl/v1/energyprices?fromDate=${fromDate}&tillDate=${tillDate}&interval=4&usageType=1&inclBtw=true`;
 
-                console.log(`Trying Energy Zero data for: ${date.toDateString()}`);
-                console.log(`URL: ${url}`);
+                console.log(`Fetching Energy Zero data for: ${date.toDateString()}`);
 
                 try {
                     const response = await this.cachedFetch(url);
                     if (response.ok) {
                         const data = await response.json();
                         if (data.Prices && data.Prices.length > 0) {
-                            const processedData = processEnergyZeroData(data);
-                            console.log(`✅ Loaded Energy Zero data for ${date.toDateString()}:`, processedData);
-                            return processedData;
+                            console.log(`✅ Loaded ${data.Prices.length} prices for ${date.toDateString()}`);
+                            allPrices.push(...data.Prices);
+                        } else {
+                            console.log(`ℹ️ No prices available for ${date.toDateString()}`);
                         }
                     } else {
                         console.warn(`HTTP ${response.status} for ${date.toDateString()}: ${response.statusText}`);
@@ -276,9 +277,16 @@ export class ApiClient {
                 }
             }
 
+            if (allPrices.length > 0) {
+                const combinedData = { Prices: allPrices };
+                const processedData = processEnergyZeroData(combinedData);
+                console.log(`✅ Total Energy Zero prices loaded: ${allPrices.length}`);
+                return processedData;
+            }
+
             // If we reach here, all attempts failed
-            console.error('❌ All Energy Zero attempts failed');
-            const error = new Error('Unable to load Energy Zero data for today or yesterday');
+            console.error('❌ No Energy Zero data available');
+            const error = new Error('Unable to load Energy Zero data for today or tomorrow');
             const errorInfo = classifyError(error, 'loading live Energy Zero prices');
             errorInfo.userMessage = 'Live Energy Zero data is currently unavailable. Historical forecasts are still shown.';
             errorInfo.severity = 'warning';
