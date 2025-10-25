@@ -52,6 +52,15 @@ class EnergyDashboard {
             this.loadEnergyData(),
             this.loadEnergyZeroData()
         ]);
+
+        // Set default time range to "Now to Tomorrow"
+        const now = new Date();
+        const tomorrow = new Date(now.getTime() + CONSTANTS.ONE_DAY_MS);
+        tomorrow.setHours(23, 59, 59, 999);
+        this.startDateTime = now;
+        this.endDateTime = tomorrow;
+        this.customTimeRange = true;
+
         this.uiController.setupLiveDataControls();
         this.uiController.setupDateTimeControls();
         this.setupLiveDataRefresh();
