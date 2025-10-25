@@ -907,8 +907,15 @@ class EnergyDashboard {
 
         // Add Energy Zero data if available
         if (this.energyZeroData && this.energyZeroData.today_prices) {
+            console.log('📊 Processing Energy Zero data:', {
+                totalPrices: this.energyZeroData.today_prices.length,
+                cutoffTime: cutoffTime.toISOString(),
+                customTimeRange: this.customTimeRange,
+                currentTimeRange: this.currentTimeRange
+            });
+
             let filteredPrices = this.energyZeroData.today_prices;
-            
+
             if (this.customTimeRange && this.startDateTime && this.endDateTime) {
                 filteredPrices = this.energyZeroData.today_prices.filter(item => {
                     const itemDate = new Date(item.timestamp);
@@ -920,6 +927,12 @@ class EnergyDashboard {
                     return itemDate >= cutoffTime;
                 });
             }
+
+            console.log('📊 After filtering:', {
+                filteredCount: filteredPrices.length,
+                firstTimestamp: filteredPrices[0]?.timestamp,
+                lastTimestamp: filteredPrices[filteredPrices.length - 1]?.timestamp
+            });
 
             if (filteredPrices.length > 0) {
                 filteredPrices.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
