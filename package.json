@@ -1,0 +1,30 @@
+{
+  "name": "energy-price-dashboard",
+  "version": "1.0.0",
+  "description": "Interactive energy price dashboard with Hugo and Plotly.js",
+  "private": true,
+  "scripts": {
+    "dev": "hugo server -D",
+    "build": "python decrypt_data_cached.py && hugo --minify",
+    "build:force": "python decrypt_data_cached.py --force && hugo --minify",
+    "clean": "rm -rf public resources static/data/*.json"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "netlify-plugin-cache": "^1.0.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/energyDataDashboard"
+  },
+  "keywords": [
+    "energy",
+    "dashboard",
+    "hugo",
+    "plotly",
+    "netherlands",
+    "electricity-prices"
+  ],
+  "author": "",
+  "license": "MIT"
+}
