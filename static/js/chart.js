@@ -259,16 +259,22 @@ class EnergyDashboard {
     }
 
     async init() {
+        console.log('🚀 Dashboard initialization starting...');
         await Promise.all([
             this.loadEnergyData(),
             this.loadEnergyZeroData()
         ]);
+        console.log('📊 Data loaded. energyZeroData:', this.energyZeroData ?
+            `${this.energyZeroData.today_prices?.length || 0} prices` : 'null');
         this.setupEventListeners();
         this.setupDateTimeControls();
         this.setupLiveDataRefresh();
+        console.log('📊 About to render chart. energyZeroData:', this.energyZeroData ?
+            `${this.energyZeroData.today_prices?.length || 0} prices` : 'null');
         this.updateChart();
         this.updateInfo();
         this.updateLiveDataInfo();
+        console.log('✅ Dashboard initialization complete');
     }
 
     /**
