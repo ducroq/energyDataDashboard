@@ -188,7 +188,9 @@ class EnergyDashboard {
 
         this.startDateTime = startTime;
         this.endDateTime = endTime;
-        this.customTimeRange = (startPeriod !== 'now' || endPeriod !== 'tomorrow');
+        // Always treat explicit range selection as custom (even "Now to Tomorrow")
+        // This ensures startDateTime/endDateTime are respected
+        this.customTimeRange = true;
 
         const description = this.getRangeDescription(startPeriod, endPeriod);
         this.uiController.updateRangeInfo(description);
