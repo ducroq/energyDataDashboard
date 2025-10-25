@@ -242,7 +242,8 @@ export class ApiClient {
             const yesterday = new Date(today);
             yesterday.setDate(yesterday.getDate() - 1);
 
-            const dates = [yesterday, today];
+            // Try today first (more likely to have current data), then yesterday as fallback
+            const dates = [today, yesterday];
 
             for (const date of dates) {
                 const startOfDay = new Date(date);
