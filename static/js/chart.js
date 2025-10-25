@@ -16,7 +16,7 @@ const CONSTANTS = {
 
     // Time periods in milliseconds
     ONE_HOUR_MS: 60 * 60 * 1000,
-    ONE_DAY_MS: CONSTANTS.ONE_DAY_MS
+    ONE_DAY_MS: 24 * 60 * 60 * 1000
 };
 
 // Data source configuration
