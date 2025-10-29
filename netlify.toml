@@ -91,7 +91,7 @@
     echo "🚀 Production build starting..." &&
     pip install cryptography &&
     mkdir -p static/data &&
-    python decrypt_data_cached.py &&
+    python decrypt_data_cached.py --force &&
     hugo --minify --baseURL $DEPLOY_PRIME_URL &&
     echo "✓ Production build complete!"
   """
@@ -113,7 +113,7 @@
     echo "🌿 Branch deploy build..." &&
     pip install cryptography &&
     mkdir -p static/data &&
-    python decrypt_data_cached.py &&
+    python decrypt_data_cached.py --force &&
     hugo --minify --baseURL $DEPLOY_PRIME_URL &&
     echo "✓ Branch build complete!"
   """
