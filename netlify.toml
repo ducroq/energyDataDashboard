@@ -3,9 +3,9 @@
     echo "🔧 Installing Python dependencies..." &&
     pip install cryptography &&
     echo "" &&
-    echo "📦 Fetching and decrypting energy data (with caching)..." &&
+    echo "📦 Fetching and decrypting energy data (forcing fresh fetch)..." &&
     mkdir -p static/data &&
-    python decrypt_data_cached.py &&
+    python decrypt_data_cached.py --force &&
     echo "" &&
     echo "🏗️  Building Hugo site..." &&
     hugo --minify
