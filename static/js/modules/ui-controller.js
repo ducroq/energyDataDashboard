@@ -81,11 +81,12 @@ export class UIController {
                 const bgWidth = legendBg ? parseFloat(legendBg.getAttribute('width')) : legendBox.width;
 
                 // Position controls below the legend, aligned to the right edge
-                const verticalSpacing = 10;
+                const verticalSpacing = 20;  // Increased spacing below legend
+                const horizontalOffset = 0;   // Offset to align with legend edge
                 const controlsWidth = controls.offsetWidth;
 
                 // Align controls' right edge with legend's right edge
-                const leftPos = legendX + bgWidth - controlsWidth;
+                const leftPos = legendX + bgWidth - controlsWidth + horizontalOffset;
                 const topPos = legendY + legendBox.height + verticalSpacing;
 
                 console.log('Positioning controls:', { legendX, legendY, bgWidth, controlsWidth, leftPos, topPos });
