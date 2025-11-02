@@ -249,6 +249,35 @@ body {
     border: 1px solid rgba(16, 185, 129, 0.1);
 }
 
+.live-data-controls #end-period {
+    background: #1a1a1a;
+    border: 1px solid #444444;
+    border-radius: 6px;
+    padding: 8px 16px;
+    color: #ffffff;
+    font-size: 0.9rem;
+    font-weight: 500;
+    min-width: 120px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.live-data-controls #end-period:hover {
+    border-color: #10b981;
+    background: #242424;
+}
+
+.live-data-controls #end-period:focus {
+    outline: none;
+    border-color: #10b981;
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+
+.live-data-controls #end-period option {
+    background: #1a1a1a;
+    color: #ffffff;
+}
+
 .toggle-label {
     display: flex;
     align-items: center;
