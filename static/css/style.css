@@ -239,8 +239,8 @@ body {
 /* Live Data Controls - Integrated into Chart below Legend */
 .live-data-controls {
     position: absolute;
-    top: 140px;  /* Below the legend */
-    right: 40px;   /* Align with legend on right side */
+    top: 180px;  /* Below the legend - calculated from legend position */
+    left: 151.8px;  /* Align with legend x position from SVG transform */
     display: flex;
     flex-direction: column;
     align-items: stretch;
