@@ -26,29 +26,21 @@ export class UIController {
     }
 
     /**
-     * Set up live data toggle and refresh controls
+     * Set up live data refresh controls
      */
     setupLiveDataControls() {
         const header = document.querySelector('.dashboard-header');
-        if (header && !document.getElementById('live-data-toggle')) {
+        if (header && !document.getElementById('refresh-live-data')) {
             const toggleContainer = document.createElement('div');
             toggleContainer.className = 'live-data-controls';
             toggleContainer.innerHTML = `
-                <label class="toggle-label">
-                    <input type="checkbox" id="live-data-toggle" ${this.dashboard.liveDataEnabled ? 'checked' : ''}>
-                    <span class="toggle-text">🔴 Live Energy Zero Data</span>
-                </label>
                 <select id="end-period">
-                    <option value="tomorrow" selected>Tomorrow</option>
-                    <option value="week">Next week</option>
+                    <option value="tomorrow" selected>day-ahead</option>
+                    <option value="week">week-ahead</option>
                 </select>
                 <button id="refresh-live-data" class="refresh-btn">🔄 Refresh</button>
             `;
             header.appendChild(toggleContainer);
-
-            document.getElementById('live-data-toggle').addEventListener('change', (e) => {
-                this.dashboard.handleLiveDataToggle(e.target.checked);
-            });
 
             document.getElementById('refresh-live-data').addEventListener('click', async () => {
                 await this.dashboard.handleRefreshClick();

@@ -21,7 +21,6 @@ class EnergyDashboard {
         this.energyZeroData = null;
         this.currentTimeRange = 'all';
         this.priceThreshold = CONSTANTS.DEFAULT_PRICE_THRESHOLD;
-        this.liveDataEnabled = true;
         this.refreshInterval = null;
         this.chartInitialized = false;
 
@@ -98,23 +97,6 @@ class EnergyDashboard {
         }, CONSTANTS.LIVE_DATA_REFRESH_INTERVAL_MS);
     }
 
-    /**
-     * Handle live data toggle change
-     * @param {boolean} enabled - Whether live data is enabled
-     */
-    handleLiveDataToggle(enabled) {
-        this.liveDataEnabled = enabled;
-        if (enabled) {
-            this.loadEnergyZeroData();
-            this.setupLiveDataRefresh();
-        } else {
-            if (this.refreshInterval) {
-                clearInterval(this.refreshInterval);
-                this.refreshInterval = null;
-            }
-        }
-        this.updateChart();
-    }
 
     /**
      * Handle manual refresh button click
