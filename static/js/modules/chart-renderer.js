@@ -32,9 +32,10 @@ export function getCurrentTimeLineShape() {
  * Get Plotly chart layout configuration
  * @param {Date} startDateTime - Start of time range
  * @param {Date} endDateTime - End of time range
+ * @param {string} lastUpdateTime - Last update timestamp
  * @returns {Object} Plotly layout object
  */
-export function getChartLayout(startDateTime, endDateTime) {
+export function getChartLayout(startDateTime, endDateTime, lastUpdateTime) {
     const xaxis = {
         title: 'Time',
         gridcolor: 'rgba(255,255,255,0.1)',
@@ -47,9 +48,15 @@ export function getChartLayout(startDateTime, endDateTime) {
         xaxis.range = [startDateTime.toISOString(), endDateTime.toISOString()];
     }
 
+    // Format title with last update time
+    const titleText = lastUpdateTime
+        ? `Last updated: ${new Date(lastUpdateTime).toLocaleString()}`
+        : '';
+
     return {
         title: {
-            font: { color: 'white', size: 18 }
+            text: titleText,
+            font: { color: 'white', size: 14 }
         },
         paper_bgcolor: 'rgba(0,0,0,0)',
         plot_bgcolor: 'rgba(0,0,0,0.3)',
@@ -93,10 +100,11 @@ export function getChartConfig() {
  * @param {boolean} chartInitialized - Whether chart has been rendered before
  * @param {Date} startDateTime - Start of time range
  * @param {Date} endDateTime - End of time range
+ * @param {string} lastUpdateTime - Last update timestamp
  * @returns {boolean} New initialization state
  */
-export function renderChart(elementId, traces, chartInitialized, startDateTime, endDateTime) {
-    const layout = getChartLayout(startDateTime, endDateTime);
+export function renderChart(elementId, traces, chartInitialized, startDateTime, endDateTime, lastUpdateTime) {
+    const layout = getChartLayout(startDateTime, endDateTime, lastUpdateTime);
     const config = getChartConfig();
 
     const element = document.getElementById(elementId);

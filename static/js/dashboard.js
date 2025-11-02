@@ -220,13 +220,17 @@ class EnergyDashboard {
             this.endDateTime
         );
 
+        // Get last update time from energy data
+        const lastUpdate = this.energyData?.entsoe?.metadata?.start_time || new Date().toISOString();
+
         this.allTimestamps = result.allTimestamps;
         this.chartInitialized = renderChart(
             'energyChart',
             result.traces,
             this.chartInitialized,
             this.startDateTime,
-            this.endDateTime
+            this.endDateTime,
+            lastUpdate
         );
 
         // Position controls below legend after chart is rendered
