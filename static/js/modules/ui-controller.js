@@ -70,10 +70,17 @@ export class UIController {
                 const legendX = parseFloat(match[1]);
                 const legendY = parseFloat(match[2]);
 
-                // Position controls below the legend with some spacing
-                const spacing = 10;
-                controls.style.left = `${legendX}px`;
-                controls.style.top = `${legendY + legendBox.height + spacing}px`;
+                // Get the legend background rect to find actual dimensions
+                const legendBg = legendGroup.querySelector('.bg');
+                const bgWidth = legendBg ? parseFloat(legendBg.getAttribute('width')) : legendBox.width;
+
+                // Position controls below the legend, aligned to the right edge
+                const verticalSpacing = 10;
+                const controlsWidth = controls.offsetWidth;
+
+                // Align controls' right edge with legend's right edge
+                controls.style.left = `${legendX + bgWidth - controlsWidth}px`;
+                controls.style.top = `${legendY + legendBox.height + verticalSpacing}px`;
                 controls.style.right = 'auto'; // Clear right positioning
             }
         } catch (e) {
