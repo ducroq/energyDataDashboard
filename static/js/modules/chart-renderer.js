@@ -30,9 +30,23 @@ export function getCurrentTimeLineShape() {
 
 /**
  * Get Plotly chart layout configuration
+ * @param {Date} startDateTime - Start of time range
+ * @param {Date} endDateTime - End of time range
  * @returns {Object} Plotly layout object
  */
-export function getChartLayout() {
+export function getChartLayout(startDateTime, endDateTime) {
+    const xaxis = {
+        title: 'Time',
+        gridcolor: 'rgba(255,255,255,0.1)',
+        color: 'white',
+        tickcolor: 'white'
+    };
+
+    // Set explicit x-axis range if start and end times are provided
+    if (startDateTime && endDateTime) {
+        xaxis.range = [startDateTime.toISOString(), endDateTime.toISOString()];
+    }
+
     return {
         title: {
             font: { color: 'white', size: 18 }
@@ -40,12 +54,7 @@ export function getChartLayout() {
         paper_bgcolor: 'rgba(0,0,0,0)',
         plot_bgcolor: 'rgba(0,0,0,0.3)',
         font: { color: 'white' },
-        xaxis: {
-            title: 'Time',
-            gridcolor: 'rgba(255,255,255,0.1)',
-            color: 'white',
-            tickcolor: 'white'
-        },
+        xaxis: xaxis,
         yaxis: {
             title: 'Price (EUR/MWh)',
             gridcolor: 'rgba(255,255,255,0.1)',
@@ -82,10 +91,12 @@ export function getChartConfig() {
  * @param {string} elementId - DOM element ID for the chart
  * @param {Array} traces - Plotly traces data
  * @param {boolean} chartInitialized - Whether chart has been rendered before
+ * @param {Date} startDateTime - Start of time range
+ * @param {Date} endDateTime - End of time range
  * @returns {boolean} New initialization state
  */
-export function renderChart(elementId, traces, chartInitialized) {
-    const layout = getChartLayout();
+export function renderChart(elementId, traces, chartInitialized, startDateTime, endDateTime) {
+    const layout = getChartLayout(startDateTime, endDateTime);
     const config = getChartConfig();
 
     const element = document.getElementById(elementId);

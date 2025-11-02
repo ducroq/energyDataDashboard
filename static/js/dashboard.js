@@ -25,10 +25,13 @@ class EnergyDashboard {
         this.refreshInterval = null;
         this.chartInitialized = false;
 
-        // Date/time selection properties
-        this.startDateTime = null;
-        this.endDateTime = null;
-        this.customTimeRange = false;
+        // Date/time selection properties - default to today 00:00 to tomorrow
+        const now = new Date();
+        this.startDateTime = new Date(now);
+        this.startDateTime.setHours(0, 0, 0, 0);
+        this.endDateTime = new Date(now.getTime() + CONSTANTS.ONE_DAY_MS);
+        this.endDateTime.setHours(23, 59, 59, 999);
+        this.customTimeRange = true;
         this.maxHistoricalDays = CONSTANTS.MAX_HISTORICAL_DAYS;
 
         // Initialize API client and UI controller
@@ -50,16 +53,8 @@ class EnergyDashboard {
     async init() {
         await Promise.all([
             this.loadEnergyData(),
-            this.loadEnergyZeroData()
+            this.loadEnergyZeroHistoricalData()
         ]);
-
-        // Set default time range to "Now to Tomorrow"
-        const now = new Date();
-        const tomorrow = new Date(now.getTime() + CONSTANTS.ONE_DAY_MS);
-        tomorrow.setHours(23, 59, 59, 999);
-        this.startDateTime = now;
-        this.endDateTime = tomorrow;
-        this.customTimeRange = true;
 
         this.uiController.setupLiveDataControls();
         this.uiController.setupDateTimeControls();
@@ -144,80 +139,37 @@ class EnergyDashboard {
      * Apply simple range selection
      */
     applySimpleRange() {
-        const startPeriod = document.getElementById('start-period').value;
         const endPeriod = document.getElementById('end-period').value;
 
         const now = new Date();
         let startTime, endTime;
 
-        // Calculate start time
-        switch (startPeriod) {
-            case 'yesterday':
-                startTime = new Date(now.getTime() - CONSTANTS.ONE_DAY_MS);
-                startTime.setHours(0, 0, 0, 0);
-                break;
-            case '2days':
-                startTime = new Date(now.getTime() - 2 * CONSTANTS.ONE_DAY_MS);
-                startTime.setHours(0, 0, 0, 0);
-                break;
-            case 'week':
-                startTime = new Date(now.getTime() - 7 * CONSTANTS.ONE_DAY_MS);
-                startTime.setHours(0, 0, 0, 0);
-                break;
-            case 'now':
-            default:
-                startTime = now;
-                break;
-        }
+        // Always start at 00:00 today
+        startTime = new Date(now);
+        startTime.setHours(0, 0, 0, 0);
 
         // Calculate end time
         switch (endPeriod) {
-            case 'now':
-                endTime = now;
-                break;
             case 'tomorrow':
                 endTime = new Date(now.getTime() + CONSTANTS.ONE_DAY_MS);
-                endTime.setHours(23, 59, 59, 999);
-                break;
-            case '2days':
-                endTime = new Date(now.getTime() + 2 * CONSTANTS.ONE_DAY_MS);
                 endTime.setHours(23, 59, 59, 999);
                 break;
             case 'week':
                 endTime = new Date(now.getTime() + 7 * CONSTANTS.ONE_DAY_MS);
                 endTime.setHours(23, 59, 59, 999);
                 break;
-        }
-
-        // Validation
-        if (startTime >= endTime) {
-            alert('Start time must be before end time');
-            return;
+            default:
+                endTime = new Date(now.getTime() + CONSTANTS.ONE_DAY_MS);
+                endTime.setHours(23, 59, 59, 999);
+                break;
         }
 
         this.startDateTime = startTime;
         this.endDateTime = endTime;
-        // Always treat explicit range selection as custom (even "Now to Tomorrow")
-        // This ensures startDateTime/endDateTime are respected
         this.customTimeRange = true;
 
-        const description = this.getRangeDescription(startPeriod, endPeriod);
+        const description = this.getRangeDescription(endPeriod);
         this.uiController.updateRangeInfo(description);
-        this.debouncedRefresh();
-    }
-
-    /**
-     * Reset to default time range
-     */
-    resetToDefault() {
-        document.getElementById('start-period').value = 'now';
-        document.getElementById('end-period').value = 'tomorrow';
-
-        this.startDateTime = null;
-        this.endDateTime = null;
-        this.customTimeRange = false;
-
-        this.uiController.updateRangeInfo('Now to Tomorrow (Default)');
         this.debouncedRefresh();
     }
 
@@ -225,34 +177,23 @@ class EnergyDashboard {
      * Update range preview
      */
     updateRangePreview() {
-        const startPeriod = document.getElementById('start-period').value;
         const endPeriod = document.getElementById('end-period').value;
-        const description = this.getRangeDescription(startPeriod, endPeriod);
+        const description = this.getRangeDescription(endPeriod);
         this.uiController.updateRangeInfo(`Preview: ${description}`);
     }
 
     /**
      * Get human-readable range description
-     * @param {string} startPeriod - Start period value
      * @param {string} endPeriod - End period value
      * @returns {string} Description
      */
-    getRangeDescription(startPeriod, endPeriod) {
-        const startLabels = {
-            'yesterday': 'Yesterday',
-            '2days': 'Last 2 days',
-            'week': 'Last week',
-            'now': 'Now'
-        };
-
+    getRangeDescription(endPeriod) {
         const endLabels = {
-            'now': 'Now',
             'tomorrow': 'Tomorrow',
-            '2days': 'Next 2 days',
             'week': 'Next week'
         };
 
-        return `${startLabels[startPeriod]} to ${endLabels[endPeriod]}`;
+        return `Today 00:00 to ${endLabels[endPeriod]}`;
     }
 
     /**
@@ -327,7 +268,13 @@ class EnergyDashboard {
         );
 
         this.allTimestamps = result.allTimestamps;
-        this.chartInitialized = renderChart('energyChart', result.traces, this.chartInitialized);
+        this.chartInitialized = renderChart(
+            'energyChart',
+            result.traces,
+            this.chartInitialized,
+            this.startDateTime,
+            this.endDateTime
+        );
     }
 
     /**

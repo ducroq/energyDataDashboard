@@ -24,10 +24,6 @@ export class UIController {
             controlsContainer.id = 'datetime-controls';
             controlsContainer.className = 'datetime-controls';
 
-            const now = new Date();
-            const yesterday = new Date(now.getTime() - CONSTANTS.ONE_DAY_MS);
-            const tomorrow = new Date(now.getTime() + CONSTANTS.ONE_DAY_MS);
-
             controlsContainer.innerHTML = `
                 <div class="time-range-section">
                     <h4>📅 Time Range Selection</h4>
@@ -35,21 +31,9 @@ export class UIController {
                     <div class="simple-range-controls">
                         <div class="range-row">
                             <div class="range-input-group">
-                                <label for="start-period">Start Period:</label>
-                                <select id="start-period">
-                                    <option value="yesterday">Yesterday</option>
-                                    <option value="2days">Last 2 days</option>
-                                    <option value="week">Last week</option>
-                                    <option value="now" selected>Now</option>
-                                </select>
-                            </div>
-
-                            <div class="range-input-group">
-                                <label for="end-period">End Period:</label>
+                                <label for="end-period">Show until:</label>
                                 <select id="end-period">
-                                    <option value="now">Now</option>
                                     <option value="tomorrow" selected>Tomorrow</option>
-                                    <option value="2days">Next 2 days</option>
                                     <option value="week">Next week</option>
                                 </select>
                             </div>
@@ -57,12 +41,11 @@ export class UIController {
 
                         <div class="range-actions">
                             <button id="apply-range" class="apply-btn">Apply Range</button>
-                            <button id="reset-range" class="reset-btn">Reset to Default</button>
                         </div>
                     </div>
 
                     <div class="range-info" id="range-info">
-                        Showing: Now to Tomorrow
+                        Showing: Today 00:00 to Tomorrow
                     </div>
                 </div>
             `;
@@ -86,15 +69,7 @@ export class UIController {
             this.dashboard.applySimpleRange();
         });
 
-        document.getElementById('reset-range')?.addEventListener('click', () => {
-            this.dashboard.resetToDefault();
-        });
-
-        // Auto-update info when selections change
-        document.getElementById('start-period')?.addEventListener('change', () => {
-            this.dashboard.updateRangePreview();
-        });
-
+        // Auto-update info when selection changes
         document.getElementById('end-period')?.addEventListener('change', () => {
             this.dashboard.updateRangePreview();
         });
@@ -134,51 +109,9 @@ export class UIController {
     updateInfo(energyData) {
         if (!energyData) return;
 
-        let allDataPoints = [];
-        const dataSources = ['entsoe', 'energy_zero', 'epex', 'elspot'];
-
-        dataSources.forEach(sourceKey => {
-            if (energyData[sourceKey] && energyData[sourceKey].data) {
-                const sourceData = energyData[sourceKey].data;
-                const metadata = energyData[sourceKey].metadata;
-
-                let multiplier = 1;
-                if (metadata && metadata.units) {
-                    const units = metadata.units.toLowerCase();
-                    if (units.includes('kwh') || units.includes('eur/kwh')) {
-                        multiplier = 1000;
-                    }
-                }
-
-                Object.entries(sourceData).forEach(([datetime, price]) => {
-                    let normalizedDatetime = datetime;
-                    if (datetime.includes('+00:18')) {
-                        normalizedDatetime = datetime.replace('+00:18', '+02:00');
-                    }
-
-                    allDataPoints.push({
-                        datetime: normalizedDatetime,
-                        price: price * multiplier,
-                        source: sourceKey
-                    });
-                });
-            }
-        });
-
-        if (allDataPoints.length === 0) return;
-
-        allDataPoints.sort((a, b) => new Date(a.datetime) - new Date(b.datetime));
-
         const lastUpdate = energyData.entsoe?.metadata?.start_time || new Date().toISOString();
         document.getElementById('lastUpdate').textContent =
             `Last updated: ${new Date(lastUpdate).toLocaleString()}`;
-
-        // Update cheap hours with a reasonable threshold
-        const cheapHours = allDataPoints.filter(item => item.price > 0 && item.price < CONSTANTS.DEFAULT_CHEAP_PRICE_THRESHOLD);
-
-        document.getElementById('cheapHours').innerHTML =
-            `${cheapHours.length} hours below €${CONSTANTS.DEFAULT_CHEAP_PRICE_THRESHOLD}<br>` +
-            `(${((cheapHours.length / allDataPoints.length) * 100).toFixed(1)}% of all data)`;
     }
 
     /**
