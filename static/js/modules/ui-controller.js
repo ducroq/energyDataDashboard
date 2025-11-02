@@ -82,7 +82,7 @@ export class UIController {
 
                 // Position controls below the legend, aligned to the right edge
                 const verticalSpacing = 100;  // Increased spacing below legend
-                const horizontalOffset = 50;   // Offset to the right
+                const horizontalOffset = 10;   // Offset to the right
                 const controlsWidth = controls.offsetWidth;
 
                 // Align controls' right edge with legend's right edge
