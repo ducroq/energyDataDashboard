@@ -18,60 +18,10 @@ export class UIController {
      * Set up date/time range controls
      */
     setupDateTimeControls() {
-        const header = document.querySelector('.dashboard-header');
-        if (header && !document.getElementById('datetime-controls')) {
-            const controlsContainer = document.createElement('div');
-            controlsContainer.id = 'datetime-controls';
-            controlsContainer.className = 'datetime-controls';
-
-            controlsContainer.innerHTML = `
-                <div class="time-range-section">
-                    <h4>📅 Time Range Selection</h4>
-
-                    <div class="simple-range-controls">
-                        <div class="range-row">
-                            <div class="range-input-group">
-                                <label for="end-period">Show until:</label>
-                                <select id="end-period">
-                                    <option value="tomorrow" selected>Tomorrow</option>
-                                    <option value="week">Next week</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="range-actions">
-                            <button id="apply-range" class="apply-btn">Apply Range</button>
-                        </div>
-                    </div>
-
-                    <div class="range-info" id="range-info">
-                        Showing: Today 00:00 to Tomorrow
-                    </div>
-                </div>
-            `;
-
-            const existingControls = document.querySelector('.live-data-controls');
-            if (existingControls) {
-                existingControls.parentNode.insertBefore(controlsContainer, existingControls.nextSibling);
-            } else {
-                header.appendChild(controlsContainer);
-            }
-
-            this.setupSimpleRangeEventListeners();
-        }
-    }
-
-    /**
-     * Set up event listeners for range controls
-     */
-    setupSimpleRangeEventListeners() {
-        document.getElementById('apply-range')?.addEventListener('click', () => {
-            this.dashboard.applySimpleRange();
-        });
-
-        // Auto-update info when selection changes
+        // Time range selector is now integrated with live data controls
+        // Auto-apply on change
         document.getElementById('end-period')?.addEventListener('change', () => {
-            this.dashboard.updateRangePreview();
+            this.dashboard.applySimpleRange();
         });
     }
 
@@ -88,6 +38,10 @@ export class UIController {
                     <input type="checkbox" id="live-data-toggle" ${this.dashboard.liveDataEnabled ? 'checked' : ''}>
                     <span class="toggle-text">🔴 Live Energy Zero Data</span>
                 </label>
+                <select id="end-period">
+                    <option value="tomorrow" selected>Tomorrow</option>
+                    <option value="week">Next week</option>
+                </select>
                 <button id="refresh-live-data" class="refresh-btn">🔄 Refresh</button>
             `;
             header.appendChild(toggleContainer);
@@ -114,102 +68,6 @@ export class UIController {
             `Last updated: ${new Date(lastUpdate).toLocaleString()}`;
     }
 
-    /**
-     * Create or update the live data panel
-     * @param {Object} energyZeroData - Processed Energy Zero data
-     * @param {boolean} customTimeRange - Whether using custom time range
-     * @param {Date} startDateTime - Start of custom range
-     * @param {Date} endDateTime - End of custom range
-     */
-    updateLiveDataPanel(energyZeroData, customTimeRange, startDateTime, endDateTime) {
-        let livePanel = document.getElementById('live-data-panel');
-
-        if (!livePanel) {
-            livePanel = document.createElement('div');
-            livePanel.id = 'live-data-panel';
-            livePanel.className = 'info-card live-data-card';
-
-            const dataInfo = document.querySelector('.data-info');
-            if (dataInfo) {
-                dataInfo.insertBefore(livePanel, dataInfo.firstChild);
-            }
-        }
-
-        if (energyZeroData) {
-            const current = energyZeroData.current_price;
-            const stats = energyZeroData.statistics;
-            const lastUpdated = new Date(energyZeroData.last_updated);
-
-            livePanel.innerHTML = `
-                <h3>🔴 Live Energy Zero Prices</h3>
-                <div class="live-current-price">
-                    ${current ?
-                        `<div class="price-current">${current.price_eur_mwh.toFixed(2)}</div>
-                         <div class="price-unit">EUR/MWh</div>
-                         <div class="price-time">Current hour (${current.hour}:00)</div>` :
-                        `<div class="price-unavailable">Current hour price not available</div>`
-                    }
-                </div>
-                <div class="live-stats">
-                    <div class="stat-row">
-                        <span>Today's Range:</span>
-                        <span>€${stats.min?.toFixed(2)} - €${stats.max?.toFixed(2)}</span>
-                    </div>
-                    <div class="stat-row">
-                        <span>Today's Average:</span>
-                        <span>€${stats.avg?.toFixed(2)}</span>
-                    </div>
-                    <div class="stat-row">
-                        <span>Data Points:</span>
-                        <span>${stats.count || 0} hours</span>
-                    </div>
-                </div>
-                <div class="live-update-time">
-                    Updated: ${lastUpdated.toLocaleTimeString()}
-                </div>
-            `;
-
-            // Add time range info if in custom mode
-            if (customTimeRange && energyZeroData) {
-                const timeRangeInfo = document.createElement('div');
-                timeRangeInfo.className = 'time-range-display';
-                timeRangeInfo.innerHTML = `
-                    <div class="time-range-title">📅 Viewing Period:</div>
-                    <div class="time-range-dates">
-                        ${formatDateTime(startDateTime)} <br>
-                        to ${formatDateTime(endDateTime)}
-                    </div>
-                    <div class="time-range-duration">
-                        (${energyZeroData.statistics.count} data points)
-                    </div>
-                `;
-
-                const liveStats = livePanel.querySelector('.live-stats');
-                if (liveStats) {
-                    livePanel.insertBefore(timeRangeInfo, liveStats);
-                }
-            }
-        } else {
-            livePanel.innerHTML = `
-                <h3>🔴 Live Energy Zero Prices</h3>
-                <div class="live-error">
-                    <div>❌ Unable to load live data</div>
-                    <div class="error-details">Check console for details</div>
-                </div>
-            `;
-        }
-    }
-
-    /**
-     * Update the range info display
-     * @param {string} text - Text to display
-     */
-    updateRangeInfo(text) {
-        const infoElement = document.getElementById('range-info');
-        if (infoElement) {
-            infoElement.textContent = text;
-        }
-    }
 
     /**
      * Show loading indicator

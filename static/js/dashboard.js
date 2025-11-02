@@ -61,7 +61,6 @@ class EnergyDashboard {
         this.setupLiveDataRefresh();
         this.updateChart();
         this.updateInfo();
-        this.updateLiveDataInfo();
     }
 
     /**
@@ -95,7 +94,6 @@ class EnergyDashboard {
         this.refreshInterval = setInterval(async () => {
             console.log('🔄 Refreshing Energy Zero data...');
             await this.loadEnergyZeroData();
-            this.updateLiveDataInfo();
             this.updateChart();
         }, CONSTANTS.LIVE_DATA_REFRESH_INTERVAL_MS);
     }
@@ -116,7 +114,6 @@ class EnergyDashboard {
             }
         }
         this.updateChart();
-        this.updateLiveDataInfo();
     }
 
     /**
@@ -129,7 +126,6 @@ class EnergyDashboard {
 
         await this.loadEnergyZeroData();
         this.updateChart();
-        this.updateLiveDataInfo();
 
         btn.textContent = '🔄 Refresh';
         btn.disabled = false;
@@ -168,33 +164,9 @@ class EnergyDashboard {
         this.endDateTime = endTime;
         this.customTimeRange = true;
 
-        const description = this.getRangeDescription(endPeriod);
-        this.uiController.updateRangeInfo(description);
         this.debouncedRefresh();
     }
 
-    /**
-     * Update range preview
-     */
-    updateRangePreview() {
-        const endPeriod = document.getElementById('end-period').value;
-        const description = this.getRangeDescription(endPeriod);
-        this.uiController.updateRangeInfo(`Preview: ${description}`);
-    }
-
-    /**
-     * Get human-readable range description
-     * @param {string} endPeriod - End period value
-     * @returns {string} Description
-     */
-    getRangeDescription(endPeriod) {
-        const endLabels = {
-            'tomorrow': 'Tomorrow',
-            'week': 'Next week'
-        };
-
-        return `Today 00:00 to ${endLabels[endPeriod]}`;
-    }
 
     /**
      * Refresh data and update chart
@@ -214,7 +186,6 @@ class EnergyDashboard {
 
             this.updateChart();
             this.updateInfo();
-            this.updateLiveDataInfo();
         } catch (error) {
             // Don't show error for aborted requests
             if (error.name === 'AbortError') {
@@ -282,18 +253,6 @@ class EnergyDashboard {
      */
     updateInfo() {
         this.uiController.updateInfo(this.energyData);
-    }
-
-    /**
-     * Update live data info panel
-     */
-    updateLiveDataInfo() {
-        this.uiController.updateLiveDataPanel(
-            this.energyZeroData,
-            this.customTimeRange,
-            this.startDateTime,
-            this.endDateTime
-        );
     }
 
     /**
