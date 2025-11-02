@@ -53,11 +53,17 @@ export class UIController {
      */
     positionControlsBelowLegend() {
         const controls = document.querySelector('.live-data-controls');
-        if (!controls) return;
+        if (!controls) {
+            console.warn('Controls not found');
+            return;
+        }
 
         // Find the legend group in the Plotly SVG
         const legendGroup = document.querySelector('.legend');
-        if (!legendGroup) return;
+        if (!legendGroup) {
+            console.warn('Legend group not found');
+            return;
+        }
 
         try {
             // Get the bounding box of the legend
@@ -79,12 +85,17 @@ export class UIController {
                 const controlsWidth = controls.offsetWidth;
 
                 // Align controls' right edge with legend's right edge
-                controls.style.left = `${legendX + bgWidth - controlsWidth}px`;
-                controls.style.top = `${legendY + legendBox.height + verticalSpacing}px`;
-                controls.style.right = 'auto'; // Clear right positioning
+                const leftPos = legendX + bgWidth - controlsWidth;
+                const topPos = legendY + legendBox.height + verticalSpacing;
+
+                console.log('Positioning controls:', { legendX, legendY, bgWidth, controlsWidth, leftPos, topPos });
+
+                controls.style.left = `${leftPos}px`;
+                controls.style.top = `${topPos}px`;
+                controls.style.right = ''; // Clear right positioning
             }
         } catch (e) {
-            console.warn('Could not position controls dynamically:', e);
+            console.error('Could not position controls dynamically:', e);
         }
     }
 
