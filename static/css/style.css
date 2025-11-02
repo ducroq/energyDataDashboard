@@ -236,11 +236,11 @@ body {
     margin-top: 5px;
 }
 
-/* Live Data Controls - Integrated into Chart */
+/* Live Data Controls - Integrated into Chart below Legend */
 .live-data-controls {
     position: absolute;
-    top: 10px;
-    right: 10px;
+    top: 120px;  /* Below the legend (legend is typically ~100px tall) */
+    left: 70px;   /* Align with legend left edge */
     display: flex;
     align-items: center;
     gap: 10px;
