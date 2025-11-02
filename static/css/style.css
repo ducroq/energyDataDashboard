@@ -239,8 +239,7 @@ body {
 /* Live Data Controls - Integrated into Chart below Legend */
 .live-data-controls {
     position: absolute;
-    top: 180px;  /* Below the legend - calculated from legend position */
-    right: 30px;  /* Align with right side to match legend positioning */
+    /* Position will be set dynamically by JavaScript */
     display: flex;
     flex-direction: column;
     align-items: stretch;
