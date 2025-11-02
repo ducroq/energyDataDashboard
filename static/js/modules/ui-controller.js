@@ -105,11 +105,8 @@ export class UIController {
      * @param {Object} energyData - Energy forecast data
      */
     updateInfo(energyData) {
-        if (!energyData) return;
-
-        const lastUpdate = energyData.entsoe?.metadata?.start_time || new Date().toISOString();
-        document.getElementById('lastUpdate').textContent =
-            `Last updated: ${new Date(lastUpdate).toLocaleString()}`;
+        // Last update time is now shown in chart title
+        // This method can be used for other info updates in the future
     }
 
 
