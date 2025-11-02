@@ -240,10 +240,10 @@ body {
 .live-data-controls {
     position: absolute;
     top: 140px;  /* Below the legend */
-    left: 72px;   /* Align with legend left edge (matches Plotly's default) */
+    right: 40px;   /* Align with legend on right side */
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
     gap: 8px;
     background: rgba(17, 17, 17, 0.95);
     padding: 10px;
@@ -252,6 +252,7 @@ body {
     backdrop-filter: blur(10px);
     z-index: 10;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    min-width: 150px;
 }
 
 .live-data-controls #end-period {
