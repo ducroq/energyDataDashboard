@@ -946,7 +946,8 @@ class EnergyDashboard {
                 title: 'Time',
                 gridcolor: 'rgba(255,255,255,0.1)',
                 color: 'white',
-                tickcolor: 'white'
+                tickcolor: 'white',
+                range: [this.startDateTime.toISOString(), this.endDateTime.toISOString()]
             },
             yaxis: {
                 title: 'Price (EUR/MWh)',
