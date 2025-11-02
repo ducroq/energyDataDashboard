@@ -49,6 +49,39 @@ export class UIController {
     }
 
     /**
+     * Position controls below the Plotly legend dynamically
+     */
+    positionControlsBelowLegend() {
+        const controls = document.querySelector('.live-data-controls');
+        if (!controls) return;
+
+        // Find the legend group in the Plotly SVG
+        const legendGroup = document.querySelector('.legend');
+        if (!legendGroup) return;
+
+        try {
+            // Get the bounding box of the legend
+            const legendBox = legendGroup.getBBox();
+            const legendTransform = legendGroup.getAttribute('transform');
+
+            // Parse the transform to get x, y position
+            const match = legendTransform?.match(/translate\(([^,]+),([^)]+)\)/);
+            if (match) {
+                const legendX = parseFloat(match[1]);
+                const legendY = parseFloat(match[2]);
+
+                // Position controls below the legend with some spacing
+                const spacing = 10;
+                controls.style.left = `${legendX}px`;
+                controls.style.top = `${legendY + legendBox.height + spacing}px`;
+                controls.style.right = 'auto'; // Clear right positioning
+            }
+        } catch (e) {
+            console.warn('Could not position controls dynamically:', e);
+        }
+    }
+
+    /**
      * Update info cards with energy data statistics
      * @param {Object} energyData - Energy forecast data
      */

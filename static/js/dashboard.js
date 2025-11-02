@@ -228,6 +228,11 @@ class EnergyDashboard {
             this.startDateTime,
             this.endDateTime
         );
+
+        // Position controls below legend after chart is rendered
+        setTimeout(() => {
+            this.uiController.positionControlsBelowLegend();
+        }, 100);
     }
 
     /**
