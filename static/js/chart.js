@@ -1,4 +1,5 @@
 // Constants
+// Cache-bust: 2025-11-02-v2
 const CONSTANTS = {
     // Unit conversions
     EUR_KWH_TO_MWH_MULTIPLIER: 1000,
