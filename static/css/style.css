@@ -240,7 +240,7 @@ body {
 .live-data-controls {
     position: absolute;
     top: 180px;  /* Below the legend - calculated from legend position */
-    left: 151.8px;  /* Align with legend x position from SVG transform */
+    right: 30px;  /* Align with right side to match legend positioning */
     display: flex;
     flex-direction: column;
     align-items: stretch;
