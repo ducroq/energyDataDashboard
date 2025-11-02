@@ -238,10 +238,13 @@ class EnergyDashboard {
         this.refreshInterval = null;
         this.chartInitialized = false; // Track if chart has been rendered
 
-        // Date/time selection properties
-        this.startDateTime = null;
-        this.endDateTime = null;
-        this.customTimeRange = false;
+        // Date/time selection properties - default to today 00:00 to tomorrow
+        const now = new Date();
+        this.startDateTime = new Date(now);
+        this.startDateTime.setHours(0, 0, 0, 0);
+        this.endDateTime = new Date(now.getTime() + CONSTANTS.ONE_DAY_MS);
+        this.endDateTime.setHours(23, 59, 59, 999);
+        this.customTimeRange = true;
         this.maxHistoricalDays = CONSTANTS.MAX_HISTORICAL_DAYS;
 
         // API response cache (URL -> {data, timestamp})
@@ -262,7 +265,7 @@ class EnergyDashboard {
         console.log('🚀 Dashboard initialization starting...');
         await Promise.all([
             this.loadEnergyData(),
-            this.loadEnergyZeroData()
+            this.loadEnergyZeroHistoricalData()
         ]);
         console.log('📊 Data loaded. energyZeroData:', this.energyZeroData ?
             `${this.energyZeroData.today_prices?.length || 0} prices` : 'null');
@@ -584,57 +587,40 @@ class EnergyDashboard {
             const controlsContainer = document.createElement('div');
             controlsContainer.id = 'datetime-controls';
             controlsContainer.className = 'datetime-controls';
-            
-            const now = new Date();
-            const yesterday = new Date(now.getTime() - CONSTANTS.ONE_DAY_MS);
-            const tomorrow = new Date(now.getTime() + CONSTANTS.ONE_DAY_MS);
-            
+
             controlsContainer.innerHTML = `
                 <div class="time-range-section">
                     <h4>📅 Time Range Selection</h4>
-                    
+
                     <div class="simple-range-controls">
                         <div class="range-row">
                             <div class="range-input-group">
-                                <label for="start-period">Start Period:</label>
-                                <select id="start-period">
-                                    <option value="yesterday">Yesterday</option>
-                                    <option value="2days">Last 2 days</option>
-                                    <option value="week">Last week</option>
-                                    <option value="now" selected>Now</option>
-                                </select>
-                            </div>
-                            
-                            <div class="range-input-group">
-                                <label for="end-period">End Period:</label>
+                                <label for="end-period">Show until:</label>
                                 <select id="end-period">
-                                    <option value="now">Now</option>
                                     <option value="tomorrow" selected>Tomorrow</option>
-                                    <option value="2days">Next 2 days</option>
                                     <option value="week">Next week</option>
                                 </select>
                             </div>
                         </div>
-                        
+
                         <div class="range-actions">
                             <button id="apply-range" class="apply-btn">Apply Range</button>
-                            <button id="reset-range" class="reset-btn">Reset to Default</button>
                         </div>
                     </div>
-                    
+
                     <div class="range-info" id="range-info">
-                        Showing: Now to Tomorrow
+                        Showing: Today 00:00 to Tomorrow
                     </div>
                 </div>
             `;
-            
+
             const existingControls = document.querySelector('.live-data-controls');
             if (existingControls) {
                 existingControls.parentNode.insertBefore(controlsContainer, existingControls.nextSibling);
             } else {
                 header.appendChild(controlsContainer);
             }
-            
+
             this.setupSimpleRangeEventListeners();
         }
     }
@@ -644,116 +630,60 @@ class EnergyDashboard {
             this.applySimpleRange();
         });
 
-        document.getElementById('reset-range')?.addEventListener('click', () => {
-            this.resetToDefault();
-        });
-
-        // Auto-update info when selections change
-        document.getElementById('start-period')?.addEventListener('change', () => {
-            this.updateRangePreview();
-        });
-
+        // Auto-update info when selection changes
         document.getElementById('end-period')?.addEventListener('change', () => {
             this.updateRangePreview();
         });
     }
 
     applySimpleRange() {
-        const startPeriod = document.getElementById('start-period').value;
         const endPeriod = document.getElementById('end-period').value;
-        
+
         const now = new Date();
         let startTime, endTime;
-        
-        // Calculate start time
-        switch (startPeriod) {
-            case 'yesterday':
-                startTime = new Date(now.getTime() - CONSTANTS.ONE_DAY_MS);
-                startTime.setHours(0, 0, 0, 0);
-                break;
-            case '2days':
-                startTime = new Date(now.getTime() - 2 * CONSTANTS.ONE_DAY_MS);
-                startTime.setHours(0, 0, 0, 0);
-                break;
-            case 'week':
-                startTime = new Date(now.getTime() - 7 * CONSTANTS.ONE_DAY_MS);
-                startTime.setHours(0, 0, 0, 0);
-                break;
-            case 'now':
-            default:
-                startTime = now;
-                break;
-        }
-        
+
+        // Always start at 00:00 today
+        startTime = new Date(now);
+        startTime.setHours(0, 0, 0, 0);
+
         // Calculate end time
         switch (endPeriod) {
-            case 'now':
-                endTime = now;
-                break;
             case 'tomorrow':
                 endTime = new Date(now.getTime() + CONSTANTS.ONE_DAY_MS);
-                endTime.setHours(23, 59, 59, 999);
-                break;
-            case '2days':
-                endTime = new Date(now.getTime() + 2 * CONSTANTS.ONE_DAY_MS);
                 endTime.setHours(23, 59, 59, 999);
                 break;
             case 'week':
                 endTime = new Date(now.getTime() + 7 * CONSTANTS.ONE_DAY_MS);
                 endTime.setHours(23, 59, 59, 999);
                 break;
+            default:
+                endTime = new Date(now.getTime() + CONSTANTS.ONE_DAY_MS);
+                endTime.setHours(23, 59, 59, 999);
+                break;
         }
-        
-        // Validation
-        if (startTime >= endTime) {
-            alert('Start time must be before end time');
-            return;
-        }
-        
+
         this.startDateTime = startTime;
         this.endDateTime = endTime;
-        this.customTimeRange = (startPeriod !== 'now' || endPeriod !== 'tomorrow');
-        
-        const description = this.getRangeDescription(startPeriod, endPeriod);
+        this.customTimeRange = true;
+
+        const description = this.getRangeDescription(endPeriod);
         this.updateRangeInfo(description);
         this.debouncedRefresh();  // Use debounced version to prevent rapid-fire API calls
     }
 
-    resetToDefault() {
-        document.getElementById('start-period').value = 'now';
-        document.getElementById('end-period').value = 'tomorrow';
-
-        this.startDateTime = null;
-        this.endDateTime = null;
-        this.customTimeRange = false;
-
-        this.updateRangeInfo('Now to Tomorrow (Default)');
-        this.debouncedRefresh();  // Use debounced version to prevent rapid-fire API calls
-    }
-
     updateRangePreview() {
-        const startPeriod = document.getElementById('start-period').value;
         const endPeriod = document.getElementById('end-period').value;
-        const description = this.getRangeDescription(startPeriod, endPeriod);
+        const description = this.getRangeDescription(endPeriod);
         this.updateRangeInfo(`Preview: ${description}`);
     }
 
-    getRangeDescription(startPeriod, endPeriod) {
-        const startLabels = {
-            'yesterday': 'Yesterday',
-            '2days': 'Last 2 days',
-            'week': 'Last week',
-            'now': 'Now'
-        };
-        
+    getRangeDescription(endPeriod) {
         const endLabels = {
-            'now': 'Now',
             'tomorrow': 'Tomorrow',
-            '2days': 'Next 2 days',
             'week': 'Next week'
         };
-        
-        return `${startLabels[startPeriod]} to ${endLabels[endPeriod]}`;
+
+        return `Today 00:00 to ${endLabels[endPeriod]}`;
     }
 
     async refreshDataAndChart() {
@@ -1075,51 +1005,9 @@ class EnergyDashboard {
     updateInfo() {
         if (!this.energyData) return;
 
-        let allDataPoints = [];
-        const dataSources = ['entsoe', 'energy_zero', 'epex', 'elspot'];
-        
-        dataSources.forEach(sourceKey => {
-            if (this.energyData[sourceKey] && this.energyData[sourceKey].data) {
-                const sourceData = this.energyData[sourceKey].data;
-                const metadata = this.energyData[sourceKey].metadata;
-                
-                let multiplier = 1;
-                if (metadata && metadata.units) {
-                    const units = metadata.units.toLowerCase();
-                    if (units.includes('kwh') || units.includes('eur/kwh')) {
-                        multiplier = 1000;
-                    }
-                }
-                
-                Object.entries(sourceData).forEach(([datetime, price]) => {
-                    let normalizedDatetime = datetime;
-                    if (datetime.includes('+00:18')) {
-                        normalizedDatetime = datetime.replace('+00:18', '+02:00');
-                    }
-                    
-                    allDataPoints.push({ 
-                        datetime: normalizedDatetime, 
-                        price: price * multiplier, 
-                        source: sourceKey 
-                    });
-                });
-            }
-        });
-
-        if (allDataPoints.length === 0) return;
-
-        allDataPoints.sort((a, b) => new Date(a.datetime) - new Date(b.datetime));
-
         const lastUpdate = this.energyData.entsoe?.metadata?.start_time || new Date().toISOString();
-        document.getElementById('lastUpdate').textContent = 
+        document.getElementById('lastUpdate').textContent =
             `Last updated: ${new Date(lastUpdate).toLocaleString()}`;
-        
-        // Update cheap hours with a reasonable threshold
-        const cheapHours = allDataPoints.filter(item => item.price > 0 && item.price < CONSTANTS.DEFAULT_CHEAP_PRICE_THRESHOLD);
-
-        document.getElementById('cheapHours').innerHTML =
-            `${cheapHours.length} hours below €${CONSTANTS.DEFAULT_CHEAP_PRICE_THRESHOLD}<br>` +
-            `(${((cheapHours.length / allDataPoints.length) * 100).toFixed(1)}% of all data)`;
     }
 
     updateLiveDataInfo() {
