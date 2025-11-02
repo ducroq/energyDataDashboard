@@ -29,8 +29,8 @@ export class UIController {
      * Set up live data refresh controls
      */
     setupLiveDataControls() {
-        const header = document.querySelector('.dashboard-header');
-        if (header && !document.getElementById('refresh-live-data')) {
+        const chartContainer = document.querySelector('.chart-container');
+        if (chartContainer && !document.getElementById('refresh-live-data')) {
             const toggleContainer = document.createElement('div');
             toggleContainer.className = 'live-data-controls';
             toggleContainer.innerHTML = `
@@ -40,7 +40,7 @@ export class UIController {
                 </select>
                 <button id="refresh-live-data" class="refresh-btn">🔄 Refresh</button>
             `;
-            header.appendChild(toggleContainer);
+            chartContainer.appendChild(toggleContainer);
 
             document.getElementById('refresh-live-data').addEventListener('click', async () => {
                 await this.dashboard.handleRefreshClick();
