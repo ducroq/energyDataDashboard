@@ -598,7 +598,8 @@ class EnergyDashboard {
                             <div class="range-input-group">
                                 <label for="end-period">Show until:</label>
                                 <select id="end-period">
-                                    <option value="tomorrow" selected>Tomorrow</option>
+                                    <option value="tomorrow">Tomorrow</option>
+                                    <option value="dayaftertomorrow" selected>Day After Tomorrow</option>
                                     <option value="week">Next week</option>
                                 </select>
                             </div>
@@ -985,8 +986,10 @@ class EnergyDashboard {
 
     getCurrentTimeLineShape() {
         const now = new Date();
-        const currentTimeISO = now.toISOString();
-        
+        // Convert current UTC time to Amsterdam timezone to match the chart data
+        const amsterdamNow = convertUTCToAmsterdam(now);
+        const currentTimeISO = amsterdamNow.toISOString();
+
         // Simple white line like the horizontal axis
         return [{
             type: 'line',
