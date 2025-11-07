@@ -986,9 +986,30 @@ class EnergyDashboard {
 
     getCurrentTimeLineShape() {
         const now = new Date();
-        // Convert current UTC time to Amsterdam timezone to match the chart data
-        const amsterdamNow = convertUTCToAmsterdam(now);
-        const currentTimeISO = amsterdamNow.toISOString();
+
+        // Format as Amsterdam time with proper timezone offset (+01:00 or +02:00)
+        // instead of UTC (Z), to match how the chart data timestamps are formatted
+        const formatter = new Intl.DateTimeFormat('en-GB', {
+            timeZone: 'Europe/Amsterdam',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false
+        });
+
+        const parts = formatter.formatToParts(now);
+        const get = type => parts.find(p => p.type === type).value;
+
+        // Determine current offset (CET = +01:00 in winter, CEST = +02:00 in summer)
+        const utcDate = new Date(now.toISOString());
+        const localDate = new Date(`${get('year')}-${get('month')}-${get('day')}T${get('hour')}:${get('minute')}:${get('second')}Z`);
+        const offsetHours = Math.round((localDate - utcDate) / (60 * 60 * 1000));
+        const offsetString = offsetHours === 2 ? '+02:00' : '+01:00';
+
+        const currentTimeISO = `${get('year')}-${get('month')}-${get('day')}T${get('hour')}:${get('minute')}:${get('second')}${offsetString}`;
 
         // Simple white line like the horizontal axis
         return [{
