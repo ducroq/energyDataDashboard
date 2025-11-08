@@ -14,7 +14,6 @@
   },
   "dependencies": {},
   "devDependencies": {
-    "netlify-plugin-cache": "^1.0.3",
     "rimraf": "^5.0.5"
   },
   "repository": {

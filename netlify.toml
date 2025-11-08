@@ -17,14 +17,6 @@
   PYTHON_VERSION = "3.11"
 
 # Cache data directory between builds for faster deployments
-[[plugins]]
-  package = "netlify-plugin-cache"
-
-  [plugins.inputs]
-    # Cache the decrypted data and metadata
-    paths = [
-      "static/data"
-    ]
 
 # Security headers for all pages
 [[headers]]
