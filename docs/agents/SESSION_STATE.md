@@ -1,6 +1,6 @@
 # Energy Dashboard - Session State
 
-**Last Updated:** 2025-11-15 (Agent System Bootstrap Complete)
+**Last Updated:** 2025-11-15 (ADRs Complete, Handoff to energyDataHub)
 **Project:** Energy Price Dashboard - Real-time and forecasted energy prices for the Netherlands
 
 ---
@@ -78,6 +78,12 @@
 15. **Copied ADR template** - Ready for architectural decision records
 16. **Tested Navigator agent** - Successful orientation and status summary
 
+### Architectural Decisions (2025-11-15)
+17. **ADR-001: Timezone handling** - Documented convertUTCToAmsterdam pattern
+18. **ADR-002: Grid data in energyDataHub** - Decided to implement TenneT collector in backend
+19. **Chart agent validation** - Identified and fixed "now" line timezone bug (3 attempts)
+20. **Archived energyLiveData** - Moved research repo to archive/ for future reference
+
 ---
 
 ## 🔧 Technical Details
@@ -143,30 +149,45 @@ None currently - all core functionality working!
 
 ## 📋 Next Steps
 
-### Immediate (This Session)
-1. **Bootstrap agent system** (IN PROGRESS)
-   - ✅ Create docs/agents/ directory structure
-   - ✅ Adapt AI_AUGMENTED_WORKFLOW.md
-   - 🚧 Create SESSION_STATE.md (this file)
-   - ⏸️ Copy ADR-TEMPLATE.md
+### ⚠️ HANDOFF TO ENERGYDATAHUB REPOSITORY
 
-2. **Discuss agent customization**
-   - Review existing agents from SANTA project
-   - Identify which agents to adapt for Energy Dashboard
-   - Design new specialized agents (Chart, Data Pipeline, etc.)
+**Context**: Grid imbalance data collection (Feature 1.2) will be implemented in energyDataHub, not this repository.
 
-### Short Term (Next Session)
-3. **Create specialized agents**
-   - Navigation agent (like Rudolf)
-   - Frontend agent (Hugo/JS focused)
-   - Chart agent (Plotly.js validation)
-   - Data Pipeline agent (decrypt_data.py, API integration)
-   - Deployment agent (Netlify)
+**See**: [ADR-002: Grid Imbalance Data in energyDataHub](../decisions/002-grid-imbalance-data-in-energydatahub.md)
 
-4. **Document architectural decisions**
-   - Create ADR for timezone handling approach
-   - Create ADR for multi-source data integration
-   - Create ADR for encryption strategy
+**Next Action**: Switch to energyDataHub repository to implement TenneT collector
+- Repository: `C:\Users\scbry\HAN\HAN H2 LAB IPKW - Projects - WebBasedControl\01. Software\energyDataHub`
+- Task: Create `collectors/tennet.py` using BaseCollector pattern
+- Timeline: 3-4 days for implementation, then return to energyDataDashboard for visualization
+
+**Blocked Until energyDataHub Publishes Data:**
+- Visualization of grid imbalance data (secondary Y-axis on chart)
+- Status indicator widget (🟢🟡🔴)
+- Grid-price correlation analysis
+
+### Immediate (This Repository - Paused)
+1. ✅ **Agent system bootstrap** - COMPLETE
+   - ✅ Created docs/agents/ directory structure
+   - ✅ Adapted AI_AUGMENTED_WORKFLOW.md
+   - ✅ Created SESSION_STATE.md (this file)
+   - ✅ Copied ADR-TEMPLATE.md
+   - ✅ Built 7 specialized agents
+
+2. ✅ **Architectural decisions** - COMPLETE
+   - ✅ ADR-001: Timezone handling strategy
+   - ✅ ADR-002: Grid imbalance data architecture
+
+### Short Term (After energyDataHub Implementation)
+3. **Grid Status Visualization** (Feature 1.2 - Phase 2)
+   - Update decrypt_data.py to fetch grid_imbalance.json
+   - Create static/js/modules/grid-status.js
+   - Add secondary Y-axis to Plotly chart
+   - Add status indicator widget
+
+4. **Enhanced Info Cards** (Feature 1.3)
+   - Add volatility indicator
+   - Display next price change percentage
+   - Show forecast accuracy (if Feature 1.1 implemented)
 
 ### Medium Term
 5. **Feature enhancements**
