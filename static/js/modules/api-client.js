@@ -233,7 +233,7 @@ export class ApiClient {
     }
 
     /**
-     * Load current Energy Zero data (today + tomorrow if available)
+     * Load current Energy Zero data (today + tomorrow + day after tomorrow if available)
      * @returns {Promise<Object>} Processed Energy Zero data
      */
     async loadEnergyZeroData() {
@@ -241,9 +241,11 @@ export class ApiClient {
             const today = new Date();
             const tomorrow = new Date(today);
             tomorrow.setDate(tomorrow.getDate() + 1);
+            const dayAfterTomorrow = new Date(today);
+            dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 2);
 
-            // Fetch both today and tomorrow (tomorrow may have day-ahead prices after ~14:00)
-            const dates = [today, tomorrow];
+            // Fetch today, tomorrow, and day after tomorrow (full 48-hour forecast)
+            const dates = [today, tomorrow, dayAfterTomorrow];
             const allPrices = [];
 
             for (const date of dates) {

@@ -3,13 +3,19 @@
  * @module chart-renderer
  */
 
+import { formatAmsterdamISOString } from './timezone-utils.js';
+
 /**
- * Get the vertical line shape for the current time
+ * Get the vertical line shape for the current time in Amsterdam timezone.
+ * Automatically handles DST (CET/CEST) to match chart data timezone.
  * @returns {Array} Plotly shapes array
  */
 export function getCurrentTimeLineShape() {
     const now = new Date();
-    const currentTimeISO = now.toISOString();
+    // Convert to Amsterdam timezone (handles DST automatically)
+    // Chart data is in Amsterdam time, so "now" line must match
+    const amsterdamNow = new Date(now.getTime());
+    const currentTimeISO = formatAmsterdamISOString(amsterdamNow);
 
     // Simple white line like the horizontal axis
     return [{

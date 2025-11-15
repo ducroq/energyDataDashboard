@@ -35,7 +35,8 @@ export class UIController {
             toggleContainer.className = 'live-data-controls';
             toggleContainer.innerHTML = `
                 <select id="end-period">
-                    <option value="tomorrow" selected>day-ahead</option>
+                    <option value="tomorrow">day-ahead</option>
+                    <option value="dayaftertomorrow" selected>48-hour forecast</option>
                     <option value="week">week-ahead</option>
                 </select>
                 <button id="refresh-live-data" class="refresh-btn">🔄 Refresh</button>

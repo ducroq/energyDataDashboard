@@ -24,11 +24,11 @@ class EnergyDashboard {
         this.refreshInterval = null;
         this.chartInitialized = false;
 
-        // Date/time selection properties - default to today 00:00 to tomorrow
+        // Date/time selection properties - default to today 00:00 to day after tomorrow (48 hours)
         const now = new Date();
         this.startDateTime = new Date(now);
         this.startDateTime.setHours(0, 0, 0, 0);
-        this.endDateTime = new Date(now.getTime() + CONSTANTS.ONE_DAY_MS);
+        this.endDateTime = new Date(now.getTime() + (CONSTANTS.ONE_DAY_MS * 2));
         this.endDateTime.setHours(23, 59, 59, 999);
         this.customTimeRange = true;
         this.maxHistoricalDays = CONSTANTS.MAX_HISTORICAL_DAYS;
@@ -132,12 +132,16 @@ class EnergyDashboard {
                 endTime = new Date(now.getTime() + CONSTANTS.ONE_DAY_MS);
                 endTime.setHours(23, 59, 59, 999);
                 break;
+            case 'dayaftertomorrow':
+                endTime = new Date(now.getTime() + (CONSTANTS.ONE_DAY_MS * 2));
+                endTime.setHours(23, 59, 59, 999);
+                break;
             case 'week':
                 endTime = new Date(now.getTime() + 7 * CONSTANTS.ONE_DAY_MS);
                 endTime.setHours(23, 59, 59, 999);
                 break;
             default:
-                endTime = new Date(now.getTime() + CONSTANTS.ONE_DAY_MS);
+                endTime = new Date(now.getTime() + (CONSTANTS.ONE_DAY_MS * 2));
                 endTime.setHours(23, 59, 59, 999);
                 break;
         }
