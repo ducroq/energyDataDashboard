@@ -3,7 +3,7 @@
  * @module chart-renderer
  */
 
-import { formatAmsterdamISOString } from './timezone-utils.js';
+import { convertUTCToAmsterdam } from './timezone-utils.js';
 
 /**
  * Get the vertical line shape for the current time in Amsterdam timezone.
@@ -14,8 +14,9 @@ export function getCurrentTimeLineShape() {
     const now = new Date();
     // Convert to Amsterdam timezone (handles DST automatically)
     // Chart data is in Amsterdam time, so "now" line must match
-    const amsterdamNow = new Date(now.getTime());
-    const currentTimeISO = formatAmsterdamISOString(amsterdamNow);
+    // Use same conversion pattern as data-processor.js for consistency
+    const amsterdamNow = convertUTCToAmsterdam(now);
+    const currentTimeISO = amsterdamNow.toISOString();
 
     // Simple white line like the horizontal axis
     return [{
