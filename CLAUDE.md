@@ -109,6 +109,27 @@ The `EnergyDashboard` class manages chart state with these key methods:
 - `processEnergyDataForChart()`: Converts raw data to Plotly traces
 - `updateChart()`: Renders chart with Plotly.newPlot
 
+### Automated Data Updates & Caching
+
+**Deployment Pipeline:**
+1. energyDataHub collects fresh data daily at 16:00 UTC
+2. Encrypts and publishes to `https://ducroq.github.io/energydatahub/`
+3. Triggers Netlify rebuild via webhook (`NETLIFY_BUILD_HOOK` secret)
+4. Netlify runs `python decrypt_data_cached.py --force` (see `netlify.toml:7`)
+5. Dashboard deployed with latest data
+
+**CRITICAL: The `--force` Flag**
+The `decrypt_data_cached.py` script has intelligent caching to speed up builds:
+- **Age-based caching**: Skips decryption if data < 24 hours old
+- **Hash-based caching**: Skips decryption if encrypted data hash unchanged
+
+The `--force` flag bypasses BOTH checks to ensure webhook-triggered builds always decrypt fresh data from energyDataHub, even if Netlify's build cache contains recent files.
+
+**Without `--force`:** Automated updates would reuse stale cached data
+**With `--force`:** Every webhook trigger guarantees fresh decryption
+
+See `docs/decisions/003-netlify-cache-force-refresh-fix.md` for details.
+
 ## Common Development Tasks
 
 ### Adding a New Data Source
