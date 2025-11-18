@@ -285,18 +285,20 @@ def fetch_and_decrypt_energy_data(force_refresh=False):
         # Calculate hash of encrypted data
         data_hash = calculate_data_hash(encrypted_data)
 
-        # Check if data has changed
+        # Check if data has changed (skip this check if force_refresh is True)
         metadata = load_metadata(metadata_path)
         previous_hash = metadata.get('data_hash')
 
-        if previous_hash == data_hash and os.path.exists(output_path):
+        if not force_refresh and previous_hash == data_hash and os.path.exists(output_path):
             logger.info("Remote data unchanged (hash match), using existing decrypted data")
             # Update metadata timestamp
             metadata['last_check_time'] = datetime.now()
             save_metadata(metadata_path, metadata)
             return True
 
-        if previous_hash:
+        if force_refresh:
+            logger.info(f"Force refresh enabled - re-decrypting data (hash: {data_hash[:16]}...)")
+        elif previous_hash:
             logger.info(f"Data has changed (hash: {data_hash[:16]}...)")
         else:
             logger.info(f"First fetch (hash: {data_hash[:16]}...)")
