@@ -30,7 +30,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Configuration
-DATA_SOURCE_URL = 'https://ducroq.github.io/energydatahub/energy_price_forecast.json'
+DATA_SOURCE_URL = 'https://raw.githubusercontent.com/ducroq/energydatahub/main/docs/energy_price_forecast.json'
 OUTPUT_DIR = 'static/data'
 OUTPUT_FILE = 'energy_price_forecast.json'
 CACHE_MAX_AGE_HOURS = 24  # Re-fetch if data is older than this

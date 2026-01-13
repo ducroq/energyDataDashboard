@@ -132,7 +132,7 @@ def fetch_and_decrypt_energy_data():
         handler = SecureDataHandler(encryption_key, hmac_key)
         
         # Fetch encrypted data from GitHub Pages endpoint with retry logic
-        url = 'https://ducroq.github.io/energydatahub/energy_price_forecast.json'
+        url = 'https://raw.githubusercontent.com/ducroq/energydatahub/main/docs/energy_price_forecast.json'
         logger.info(f"Fetching energy data from {url}")
 
         encrypted_data = fetch_with_retry(url, max_retries=3, initial_delay=2)
